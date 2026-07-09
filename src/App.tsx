@@ -371,7 +371,7 @@ export default function App() {
   async function onExportBook() {
     toast(t('tBook'), 0);
     try {
-      await exportBook({ title: contactTitle, meName, senders, dateOrder, messages, mediaMap, msgCount: stats.total });
+      await exportBook({ title: contactTitle, meName, senders, dateOrder, messages, mediaMap, msgCount: stats.total, avatar });
       toast(t('tBookDone'), 2500);
     } catch (e) { toast('❌ ' + ((e as Error).message || e), 4000); }
   }
