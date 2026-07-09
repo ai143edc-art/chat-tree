@@ -119,9 +119,15 @@ function msgEl(m: Message, out: boolean, isGroup: boolean, grouped: boolean, med
   } else {
     bub.style.cssText = `position:relative;max-width:78%;background:${out ? WA_OUT : WA_IN};border-radius:9px;`
       + `padding:6px 9px 8px;box-shadow:0 1px .6px rgba(0,0,0,.13);font-size:14.2px;line-height:1.4;`
-      + `color:${INK};word-break:break-word;overflow-wrap:anywhere;`;
-    if (out) bub.style.borderTopRightRadius = '0';
-    if (!grouped) bub.appendChild(tailEl(out));
+      + `color:${INK};word-break:break-word;overflow-wrap:anywhere;`
+      + (out ? 'margin-right:8px;' : 'margin-left:8px;');
+    // First bubble of a run: square the corner on the tail side so the tail
+    // attaches cleanly (grouped bubbles stay fully rounded, no tail) — as in the app.
+    if (!grouped) {
+      if (out) bub.style.borderTopRightRadius = '0';
+      else bub.style.borderTopLeftRadius = '0';
+      bub.appendChild(tailEl(out));
+    }
   }
 
   if (m.forwarded) {
