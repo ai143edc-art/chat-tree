@@ -28,10 +28,12 @@ import { saveChat, onAuthChange, getSharedChat, onPasswordRecovery } from './lib
 import { exportChat } from './lib/exporter';
 import { exportBook } from './lib/bookExporter';
 import type { ChatRow } from './lib/supabase';
+import { useLang } from './lib/i18n';
 
 const DEFAULT_MODEL = MODELS.find((m) => m.name.startsWith('iPhone 12')) || MODELS[3];
 
 export default function App() {
+  const { t } = useLang();
   const [screen, setScreen] = useState<'landing' | 'upload' | 'viewer' | 'shared' | 'privacy' | 'terms'>(
     () => {
       const p = new URLSearchParams(location.search);
@@ -111,7 +113,7 @@ export default function App() {
     const token = new URLSearchParams(location.search).get('c');
     if (!token) return;
     getSharedChat(token).then((row) => {
-      if (!row) { toast('Shared chat not found or no longer shared.', 4000); return; }
+      if (!row) { toast(t('tSharedNotFound'), 4000); return; }
       setMediaBlobs({});
       setAvatar(row.avatar ?? null);
       applyChat(row.chat_text || '', row.media_map || {}, {
@@ -241,11 +243,11 @@ export default function App() {
     setMessages((msgs) => msgs.map((x, i) => (i === index ? { ...x, tick: ((x.tick ?? 3) + 1) % 4 } : x)));
   }
   function editTime(index: number) {
-    const v = prompt('Message time (e.g. 8:45 PM):', messages[index]?.time ?? '');
+    const v = prompt(t('pMsgTime'), messages[index]?.time ?? '');
     if (v != null && v.trim()) setMessages((msgs) => msgs.map((x, i) => (i === index ? { ...x, time: v.trim() } : x)));
   }
   function editDate(oldDate: string) {
-    const v = prompt('Date for this day (e.g. 25/12/2024):', oldDate);
+    const v = prompt(t('pMsgDate'), oldDate);
     if (v != null && v.trim()) setMessages((msgs) => msgs.map((x) => (x.date === oldDate ? { ...x, date: v.trim() } : x)));
   }
   function addMessage() {
@@ -310,7 +312,7 @@ export default function App() {
     if (type === 'encrypt') {
       add({ system: true, text: '🔒 Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them.' });
     } else if (type === 'system') {
-      const v = prompt('System message (centered):', '');
+      const v = prompt(t('pSystemMsg'), '');
       if (v && v.trim()) add({ system: true, text: v.trim() });
     } else if (type === 'deleted') {
       add({ sender: composeSide === 'me' ? meSender : other, text: 'This message was deleted' });
@@ -318,7 +320,7 @@ export default function App() {
       const missed = type === 'call-missed';
       const media: 'voice' | 'video' = type === 'call-video' ? 'video' : 'voice';
       const title = missed ? `Missed ${media} call` : `${media === 'video' ? 'Video' : 'Voice'} call`;
-      const sub = missed ? 'Tap to call back' : (prompt('Call details (e.g. "9 min" or "No answer"):', 'No answer') || '');
+      const sub = missed ? 'Tap to call back' : (prompt(t('pCallDetails'), 'No answer') || '');
       add({ sender: missed ? other : (composeSide === 'me' ? meSender : other), call: { media, title, sub, missed } });
     }
     if ((type === 'deleted' || type.startsWith('call')) && composeSide === 'me' && !meName) setMeName('You');
@@ -356,21 +358,21 @@ export default function App() {
   }
 
   function openHistory() {
-    if (!session) { setAuthOpen(true); toast('Log in to view your saved chats', 2500); return; }
+    if (!session) { setAuthOpen(true); toast(t('tLoginViewHist'), 2500); return; }
     setHistoryOpen(true);
   }
 
   async function onExport(mode: 'png' | 'pdf') {
-    toast(`Preparing ${mode === 'png' ? 'image' : 'PDF'}… (large chats take a moment)`, 0);
-    try { await exportChat(mode, contactTitle); toast('✅ Downloaded', 2200); }
+    toast(mode === 'png' ? t('tExportImg') : t('tExportPdf'), 0);
+    try { await exportChat(mode, contactTitle); toast(t('tDownloaded'), 2200); }
     catch (e) { toast('❌ ' + ((e as Error).message || e), 4000); }
   }
 
   async function onExportBook() {
-    toast('📖 Building your keepsake book… (this can take a moment)', 0);
+    toast(t('tBook'), 0);
     try {
       await exportBook({ title: contactTitle, meName, senders, dateOrder, messages, mediaMap, msgCount: stats.total });
-      toast('✅ Book downloaded', 2500);
+      toast(t('tBookDone'), 2500);
     } catch (e) { toast('❌ ' + ((e as Error).message || e), 4000); }
   }
 
@@ -388,15 +390,15 @@ export default function App() {
       }
       if (t) { idxs.push(i); texts.push(t); }
     });
-    if (!texts.length) { toast('Nothing to translate here.', 2500); return; }
+    if (!texts.length) { toast(t('tNothingTr'), 2500); return; }
     setTranslateOpen(false); setTranslating(true);
-    toast(`🌐 Translating 0 / ${texts.length}…`, 0);
+    toast(`${t('tTrProgress')} 0 / ${texts.length}…`, 0);
     try {
-      const out = await translateBatch(texts, from, to, (done, total) => toast(`🌐 Translating ${done} / ${total}…`, 0));
+      const out = await translateBatch(texts, from, to, (done, total) => toast(`${t('tTrProgress')} ${done} / ${total}…`, 0));
       const map: Record<number, string> = {};
       idxs.forEach((mi, k) => { map[mi] = out[k]; });
       setTranslations(map); setTranslated(true);
-      toast('✅ Chat translated', 2500);
+      toast(t('tTrDone'), 2500);
     } catch (e) {
       toast('❌ ' + ((e as Error).message || e), 4500);
     } finally {
@@ -405,8 +407,8 @@ export default function App() {
   }
 
   function onSave() {
-    if (!rawText) { alert('Load a chat first.'); return; }
-    if (!session) { setAuthOpen(true); toast('Log in to save to history', 2500); return; }
+    if (!rawText) { alert(t('tLoadFirst')); return; }
+    if (!session) { setAuthOpen(true); toast(t('tLoginSaveHist'), 2500); return; }
     setSaveOpen(true);
   }
   async function doSave(category: string | null) {
@@ -416,13 +418,13 @@ export default function App() {
         { contactTitle, meName, model: model.name, theme, rawText: JSON.stringify(messages),
           msgCount: stats.total, mediaCount: stats.mediaCount, avatar, category },
         mediaBlobs,
-        (i, total) => toast(`Uploading media ${i} / ${total}…`, 0),
+        (i, total) => toast(`${t('tUploading')} ${i} / ${total}…`, 0),
       );
       setSaveOpen(false);
-      toast('✅ Saved to your history!', 2500);
+      toast(t('tSaved'), 2500);
     } catch (e) {
       console.error(e);
-      toast('❌ Save failed: ' + ((e as Error).message || e), 4500);
+      toast(t('tSaveFail') + ' ' + ((e as Error).message || e), 4500);
     } finally {
       setSaving(false);
     }
@@ -433,7 +435,7 @@ export default function App() {
       <div className="load-full">
         <span className="spinner lg" />
         <span className="lf-brand">💬 Chat Tree</span>
-        <span className="lf-text">Opening shared chat…</span>
+        <span className="lf-text">{t('shOpening')}</span>
       </div>
     );
   }
@@ -460,8 +462,8 @@ export default function App() {
     return (
       <>
         <div className="shared-bar">
-          <span className="sb-title">💬 Shared chat · read-only</span>
-          <a className="sb-open" href={location.origin}>Open Chat Viewer →</a>
+          <span className="sb-title">{t('shSharedRO')}</span>
+          <a className="sb-open" href={location.origin}>{t('shOpen')}</a>
         </div>
         <PhoneViewer
           messages={messages} meName={meName} senders={senders} mediaMap={mediaMap}

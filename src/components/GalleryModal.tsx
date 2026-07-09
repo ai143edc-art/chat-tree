@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import * as P from '../lib/parser';
 import type { Message } from '../lib/parser';
+import { useLang } from '../lib/i18n';
 
 interface Item { url: string; kind: 'img' | 'video'; name: string }
 
@@ -14,6 +15,7 @@ interface Props {
 
 /** A dedicated grid of every photo & video in the chat. Click to open in the lightbox. */
 export default function GalleryModal({ open, onClose, messages, mediaMap, onOpen }: Props) {
+  const { t } = useLang();
   const [tab, setTab] = useState<'all' | 'img' | 'video'>('all');
 
   const items = useMemo<Item[]>(() => {
@@ -42,14 +44,14 @@ export default function GalleryModal({ open, onClose, messages, mediaMap, onOpen
     <div className={'gal' + (open ? ' show' : '')} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="gal-box">
         <span className="x" onClick={onClose}>&times;</span>
-        <h3>🖼️ Media gallery</h3>
+        <h3>{t('gTitle')}</h3>
         <div className="gal-tabs">
-          <button className={tab === 'all' ? 'on' : ''} onClick={() => setTab('all')}>All ({items.length})</button>
-          <button className={tab === 'img' ? 'on' : ''} onClick={() => setTab('img')}>📷 Photos ({photos})</button>
-          <button className={tab === 'video' ? 'on' : ''} onClick={() => setTab('video')}>🎥 Videos ({videos})</button>
+          <button className={tab === 'all' ? 'on' : ''} onClick={() => setTab('all')}>{t('gAll')} ({items.length})</button>
+          <button className={tab === 'img' ? 'on' : ''} onClick={() => setTab('img')}>{t('gPhotos')} ({photos})</button>
+          <button className={tab === 'video' ? 'on' : ''} onClick={() => setTab('video')}>{t('gVideos')} ({videos})</button>
         </div>
         {shown.length === 0 ? (
-          <p className="gal-empty">No media to show here. 📭</p>
+          <p className="gal-empty">{t('gEmpty')}</p>
         ) : (
           <div className="gal-grid">
             {shown.map((it, i) => (

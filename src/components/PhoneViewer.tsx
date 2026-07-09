@@ -3,6 +3,7 @@ import type { Message, DateOrder } from '../lib/parser';
 import type { PhoneModel } from '../lib/models';
 import { IconAvatar, IconBack, IconVideo, IconCall, IconMenu, IconEmoji, IconClip, IconCamera, IconMic, IconSend } from '../lib/icons';
 import MessageList from './MessageList';
+import { useLang } from '../lib/i18n';
 
 interface Props {
   messages: Message[];
@@ -74,6 +75,7 @@ interface Props {
 }
 
 export default function PhoneViewer(props: Props) {
+  const { t } = useLang();
   const { model, showFrame, theme, layoutSignal, contactTitle, status, wallpaper, avatar, activeMsgIndex } = props;
   const [box, setBox] = useState({ scale: 1, wrapW: model.w, wrapH: model.h, screenH: model.h });
   const [attachOpen, setAttachOpen] = useState(false);
@@ -173,51 +175,51 @@ export default function PhoneViewer(props: Props) {
                 <div className="ap-overlay" onClick={() => setMenuOpen(false)} />
                 <div className="dots-menu">
                   <div className="dm-item" onClick={() => { setMenuOpen(false); bodyRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                    ⬆️ Jump to top
+                    {t('vJumpTop')}
                   </div>
                   <div className="dm-item" onClick={() => { setMenuOpen(false); bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: 'smooth' }); }}>
-                    ⬇️ Jump to latest
+                    {t('vJumpLatest')}
                   </div>
                 </div>
               </>
             )}
             {props.translated && !props.search && (
               <div className="wc-float trd" style={{ bottom: props.filterActive ? 104 : 66 }}>
-                🌐 Translated
-                <span className="wc-clear" title="Show original" onClick={props.onToggleTranslated}>↩</span>
+                {t('vTranslated')}
+                <span className="wc-clear" title={t('vShowOriginal')} onClick={props.onToggleTranslated}>↩</span>
               </div>
             )}
             {props.filterActive && !props.search && (
               <div className="wc-float filt">
-                🔎 {props.visibleCount ?? 0} shown
-                <span className="wc-clear" title="Clear filter" onClick={props.onClearFilter}>✕</span>
+                🔎 {props.visibleCount ?? 0} {t('vShown')}
+                <span className="wc-clear" title={t('fClear')} onClick={props.onClearFilter}>✕</span>
               </div>
             )}
             {props.search && (
               <div className={'wc-float' + (props.matchCount ? '' : ' none')}>
-                {props.matchCount ? `${props.matchPos + 1}/${props.matchCount}` : 'No results'}
+                {props.matchCount ? `${props.matchPos + 1}/${props.matchCount}` : t('vNoResults')}
                 {props.matchCount > 0 && <>
-                  <button onClick={props.onPrevMatch} title="Previous">▲</button>
-                  <button onClick={props.onNextMatch} title="Next">▼</button>
+                  <button onClick={props.onPrevMatch} title="▲">▲</button>
+                  <button onClick={props.onNextMatch} title="▼">▼</button>
                 </>}
-                <span className="wc-clear" title="Clear" onClick={() => props.onSearch('')}>✕</span>
+                <span className="wc-clear" title="✕" onClick={() => props.onSearch('')}>✕</span>
               </div>
             )}
             {attachOpen && act && (
               <>
                 <div className="ap-overlay" onClick={() => setAttachOpen(false)} />
                 <div className="attach-pop">
-                  <div className="ap-item" onClick={() => run(act.onStats)}><span className="ap-circle" style={{ background: '#009de2' }}>📊</span>Stats</div>
-                  <div className="ap-item" onClick={() => run(act.onGallery)}><span className="ap-circle" style={{ background: '#0aa2c0' }}>📸</span>Gallery</div>
-                  <div className="ap-item" onClick={() => run(act.onFilter)}><span className="ap-circle" style={{ background: '#6c8ae4' }}>🔎</span>Filter</div>
-                  <div className="ap-item" onClick={() => run(act.onTranslate)}><span className="ap-circle" style={{ background: '#2aa86b' }}>🌐</span>Translate</div>
-                  <div className="ap-item" onClick={() => run(act.onExportImg)}><span className="ap-circle" style={{ background: '#bf59cf' }}>🖼️</span>Image</div>
-                  <div className="ap-item" onClick={() => run(act.onExportPdf)}><span className="ap-circle" style={{ background: '#d3396d' }}>📄</span>PDF</div>
-                  <div className="ap-item" onClick={() => run(act.onExportBook)}><span className="ap-circle" style={{ background: '#8a5a2b' }}>📖</span>Book</div>
-                  <div className="ap-item" onClick={() => run(act.onSave)}><span className="ap-circle" style={{ background: '#47c467' }}>{act.saving ? <span className="spinner btn" /> : '☁️'}</span>{act.saving ? 'Saving…' : 'Save'}</div>
-                  <div className="ap-item" onClick={() => run(act.onTheme)}><span className="ap-circle" style={{ background: '#7f66fe' }}>{theme === 'dark' ? '🌙' : '☀️'}</span>Theme</div>
-                  <div className="ap-item" onClick={() => run(act.onFrame)}><span className="ap-circle" style={{ background: '#e6774d' }}>📱</span>Frame {act.showFrame ? 'ON' : 'OFF'}</div>
-                  <div className="ap-item" onClick={() => run(act.onNew)}><span className="ap-circle" style={{ background: '#26a69a' }}>↺</span>New chat</div>
+                  <div className="ap-item" onClick={() => run(act.onStats)}><span className="ap-circle" style={{ background: '#009de2' }}>📊</span>{t('vActStats')}</div>
+                  <div className="ap-item" onClick={() => run(act.onGallery)}><span className="ap-circle" style={{ background: '#0aa2c0' }}>📸</span>{t('vActGallery')}</div>
+                  <div className="ap-item" onClick={() => run(act.onFilter)}><span className="ap-circle" style={{ background: '#6c8ae4' }}>🔎</span>{t('vActFilter')}</div>
+                  <div className="ap-item" onClick={() => run(act.onTranslate)}><span className="ap-circle" style={{ background: '#2aa86b' }}>🌐</span>{t('vActTranslate')}</div>
+                  <div className="ap-item" onClick={() => run(act.onExportImg)}><span className="ap-circle" style={{ background: '#bf59cf' }}>🖼️</span>{t('vActImage')}</div>
+                  <div className="ap-item" onClick={() => run(act.onExportPdf)}><span className="ap-circle" style={{ background: '#d3396d' }}>📄</span>{t('vActPdf')}</div>
+                  <div className="ap-item" onClick={() => run(act.onExportBook)}><span className="ap-circle" style={{ background: '#8a5a2b' }}>📖</span>{t('vActBook')}</div>
+                  <div className="ap-item" onClick={() => run(act.onSave)}><span className="ap-circle" style={{ background: '#47c467' }}>{act.saving ? <span className="spinner btn" /> : '☁️'}</span>{act.saving ? t('vActSaving') : t('vActSave')}</div>
+                  <div className="ap-item" onClick={() => run(act.onTheme)}><span className="ap-circle" style={{ background: '#7f66fe' }}>{theme === 'dark' ? '🌙' : '☀️'}</span>{t('vActTheme')}</div>
+                  <div className="ap-item" onClick={() => run(act.onFrame)}><span className="ap-circle" style={{ background: '#e6774d' }}>📱</span>{t('vActFrame')} {act.showFrame ? t('on') : t('off')}</div>
+                  <div className="ap-item" onClick={() => run(act.onNew)}><span className="ap-circle" style={{ background: '#26a69a' }}>↺</span>{t('vActNew')}</div>
                 </div>
               </>
             )}
@@ -227,49 +229,49 @@ export default function PhoneViewer(props: Props) {
                   <div className="reply-preview">
                     <div className="rp-body">
                       <div className="rq-name">{props.compose.replyTo.sender}</div>
-                      <div className="rq-text">{props.compose.replyTo.text || '📎 media'}</div>
+                      <div className="rq-text">{props.compose.replyTo.text || `📎 ${t('vMedia')}`}</div>
                     </div>
                     <span className="rp-x" onClick={props.compose.onCancelReply}>✕</span>
                   </div>
                 )}
                 <div className="compose-row">
                 <span className="ins-wrap">
-                  <button className="side-toggle" title="Insert call / system message" onClick={() => setInsertOpen((v) => !v)}>＋</button>
+                  <button className="side-toggle" title={t('vInsertTitle')} onClick={() => setInsertOpen((v) => !v)}>＋</button>
                   {insertOpen && (
                     <>
                       <div className="ap-overlay" onClick={() => setInsertOpen(false)} />
                       <div className="ins-menu">
                         {[
-                          ['call-missed', '📞 Missed voice call'],
-                          ['call-voice', '📞 Voice call'],
-                          ['call-video', '📹 Video call'],
-                          ['encrypt', '🔒 Encryption notice'],
-                          ['deleted', '🚫 Deleted message'],
-                          ['system', '💬 Custom system text'],
-                        ].map(([t, label]) => (
-                          <div key={t} className="dm-item" onClick={() => { setInsertOpen(false); props.compose!.onInsert?.(t); }}>{label}</div>
+                          ['call-missed', t('vInsMissed')],
+                          ['call-voice', t('vInsVoice')],
+                          ['call-video', t('vInsVideo')],
+                          ['encrypt', t('vInsEncrypt')],
+                          ['deleted', t('vInsDeleted')],
+                          ['system', t('vInsSystem')],
+                        ].map(([type, label]) => (
+                          <div key={type} className="dm-item" onClick={() => { setInsertOpen(false); props.compose!.onInsert?.(type); }}>{label}</div>
                         ))}
                       </div>
                     </>
                   )}
                 </span>
-                <button className="side-toggle" title="Who is sending?" onClick={props.compose.onToggleSide}>
-                  {props.compose.side === 'me' ? '➡️ You' : '⬅️ Them'}
+                <button className="side-toggle" title={t('vWhoSending')} onClick={props.compose.onToggleSide}>
+                  {props.compose.side === 'me' ? t('vSideYou') : t('vSideThem')}
                 </button>
                 <div className="wa-input">
                   <span className="wc-ic"><IconEmoji /></span>
                   <input
-                    value={props.compose.text} placeholder="Type a message to add…"
+                    value={props.compose.text} placeholder={t('vComposePh')}
                     onChange={(e) => props.compose!.onText(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); props.compose!.onSend(); } }}
                   />
-                  <label className="wc-ic clip" title="Add photo / video" style={{ cursor: 'pointer' }}>
+                  <label className="wc-ic clip" title={t('vAddPhoto')} style={{ cursor: 'pointer' }}>
                     <input type="file" accept="image/*,video/*" hidden
                       onChange={(e) => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) props.compose!.onAddMedia?.(f); }} />
                     <IconClip />
                   </label>
                 </div>
-                <button className="wc-btn" title="Add message" onClick={props.compose.onSend}><IconSend /></button>
+                <button className="wc-btn" title={t('vAddMsg')} onClick={props.compose.onSend}><IconSend /></button>
                 </div>
               </div>
             ) : (
@@ -285,7 +287,7 @@ export default function PhoneViewer(props: Props) {
                   {!props.search && <span className="wc-ic"><IconCamera /></span>}
                 </div>
                 <button
-                  className="wc-btn" title={props.search ? 'Next match' : 'Actions'}
+                  className="wc-btn" title={props.search ? '▼' : t('vActions')}
                   onClick={() => {
                     if (props.search && props.matchCount) props.onNextMatch();
                     else if (!props.search && act) setAttachOpen((v) => !v);
