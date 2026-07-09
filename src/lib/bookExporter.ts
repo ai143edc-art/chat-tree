@@ -12,9 +12,15 @@ export interface BookMeta {
   avatar?: string | null;
 }
 
-const PAPER = '#f3ece3';        // warm paper tone for book pages
-const INK = '#111b21';
-const SUBTLE = '#7a8288';
+// Match the live chat viewer exactly so the book reads identical to the app.
+const PAPER = '#efeae2';        // WhatsApp chat background
+const INK = '#111b21';          // --wa-txt
+const SUBTLE = '#667781';       // --wa-sub
+const WA_OUT = '#d9fdd3';       // outgoing bubble
+const WA_IN = '#ffffff';        // incoming bubble
+const WA_TEAL = '#128c7e';
+const WA_TICK = '#53bdeb';      // blue read tick
+const OUT_ACCENT = '#06cf9c';   // reply accent on outgoing side
 
 function escHtml(s: string): string {
   return (s || '').replace(/[&<>"']/g, (c) => (
@@ -62,68 +68,162 @@ function sysEl(text: string): HTMLElement {
   return w;
 }
 
+/** Little triangle "tail" on the first bubble of a run (as in the app). */
+function tailEl(out: boolean): HTMLElement {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:absolute;top:0;width:0;height:0;'
+    + (out
+      ? `right:-8px;border-top:8px solid ${WA_OUT};border-right:8px solid transparent;`
+      : `left:-8px;border-top:8px solid ${WA_IN};border-left:8px solid transparent;`);
+  return t;
+}
+
+/** Read-receipt ticks, matching the viewer: 0 none · 1 ✓ · 2 ✓✓ grey · 3 ✓✓ blue. */
+function tickMarkup(tick: number | undefined, onMedia: boolean): string {
+  const tk = tick ?? 3;
+  if (tk === 0) return '';
+  const icon = tk === 1 ? '✓' : '✓✓';
+  const color = onMedia ? (tk === 3 ? '#eafff2' : '#e0e0e0') : (tk === 3 ? WA_TICK : SUBTLE);
+  return `<span style="color:${color};font-size:13px;">${icon}</span>`;
+}
+
+/** Render one message exactly like the chat viewer's MessageList bubble:
+ *  group avatars, sender name, reply quote, forwarded tag, media, reactions,
+ *  emoji-only styling, call rows, time + read ticks. */
 function msgEl(m: Message, out: boolean, isGroup: boolean, grouped: boolean, mediaMap: Record<string, string>): HTMLElement {
   const row = document.createElement('div');
-  row.style.cssText = `display:flex;justify-content:${out ? 'flex-end' : 'flex-start'};margin:${grouped ? '2px' : '10px'} 0;`;
-  const bub = document.createElement('div');
-  // Asymmetric corner acts as a subtle "tail" on the first bubble of each run.
-  const radius = grouped ? '10px' : (out ? '12px 12px 4px 12px' : '12px 12px 12px 4px');
-  bub.style.cssText = `position:relative;max-width:73%;background:${out ? '#d9fdd3' : '#ffffff'};`
-    + `border-radius:${radius};padding:7px 11px 5px;box-shadow:0 1px 1.5px rgba(11,20,26,.16);`
-    + 'font-size:14.5px;line-height:1.5;word-break:break-word;overflow-wrap:anywhere;';
+  row.style.cssText = `display:flex;align-items:flex-end;gap:5px;justify-content:${out ? 'flex-end' : 'flex-start'};`
+    + `margin:${grouped ? '2px' : '8px'} 0;`;
 
-  if (isGroup && !out && !grouped && m.sender) {
-    const nm = document.createElement('div');
-    nm.style.cssText = `font-size:12.5px;font-weight:700;color:${P.avatarColor(m.sender)};margin-bottom:2px;`;
-    nm.textContent = m.sender;
-    bub.appendChild(nm);
+  // Group chats show a coloured avatar (or a spacer under a run) beside incoming bubbles.
+  if (isGroup && !out) {
+    const av = document.createElement('div');
+    if (grouped) {
+      av.style.cssText = 'width:27px;height:27px;flex:0 0 auto;';
+    } else {
+      av.style.cssText = 'width:27px;height:27px;border-radius:50%;flex:0 0 auto;display:flex;'
+        + `align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;`
+        + `background:${P.avatarColor(m.sender || '')};`;
+      av.textContent = P.initial(m.sender || '');
+    }
+    row.appendChild(av);
   }
 
   const att = m.call ? null : P.findAttachment(m.text);
+  const emojiOnly = !m.call && !att && !P.PLACEHOLDERS.test(m.text) && !!P.emojiInfo(m.text);
+
+  const bub = document.createElement('div');
+  if (emojiOnly) {
+    bub.style.cssText = 'position:relative;max-width:78%;background:transparent;padding:2px 4px;'
+      + `color:${INK};line-height:1.4;`;
+  } else {
+    bub.style.cssText = `position:relative;max-width:78%;background:${out ? WA_OUT : WA_IN};border-radius:9px;`
+      + `padding:6px 9px 8px;box-shadow:0 1px .6px rgba(0,0,0,.13);font-size:14.2px;line-height:1.4;`
+      + `color:${INK};word-break:break-word;overflow-wrap:anywhere;`;
+    if (out) bub.style.borderTopRightRadius = '0';
+    if (!grouped) bub.appendChild(tailEl(out));
+  }
+
+  if (m.forwarded) {
+    const f = document.createElement('div');
+    f.textContent = '↪ Forwarded';
+    f.style.cssText = `font-size:12.5px;color:${SUBTLE};font-style:italic;margin-bottom:2px;`;
+    bub.appendChild(f);
+  }
+
+  if (m.reply) {
+    const rq = document.createElement('div');
+    rq.style.cssText = `background:rgba(0,0,0,.05);border-left:3px solid ${out ? OUT_ACCENT : WA_TEAL};`
+      + 'border-radius:5px;padding:4px 8px;margin-bottom:4px;overflow:hidden;';
+    const nm = document.createElement('div');
+    nm.textContent = m.reply.sender || '';
+    nm.style.cssText = `font-size:12.5px;font-weight:600;color:${out ? OUT_ACCENT : WA_TEAL};`
+      + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    const tx = document.createElement('div');
+    tx.textContent = m.reply.text || '📎 media';
+    tx.style.cssText = `font-size:13px;color:${SUBTLE};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
+    rq.appendChild(nm); rq.appendChild(tx); bub.appendChild(rq);
+  }
+
+  if (isGroup && !out && !grouped && m.sender) {
+    const w = document.createElement('div');
+    w.textContent = m.sender;
+    w.style.cssText = `font-size:12.5px;font-weight:600;margin-bottom:2px;color:${P.avatarColor(m.sender)};`;
+    bub.appendChild(w);
+  }
+
+  let mediaOnly = false;
   if (m.call) {
-    const c = document.createElement('div');
-    c.textContent = `${m.call.media === 'video' ? '📹' : '📞'} ${m.call.title}${m.call.sub ? ' · ' + m.call.sub : ''}`;
-    c.style.cssText = 'color:#54656f;';
-    bub.appendChild(c);
+    const cr = document.createElement('div');
+    cr.style.cssText = 'display:flex;align-items:center;gap:11px;min-width:150px;';
+    const ic = document.createElement('div');
+    ic.textContent = m.call.media === 'video' ? '📹' : '📞';
+    ic.style.cssText = 'width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.08);display:flex;'
+      + 'align-items:center;justify-content:center;font-size:18px;' + (m.call.missed ? 'color:#e5484d;' : '');
+    const tw = document.createElement('div');
+    tw.innerHTML = `<div style="font-size:14.5px;font-weight:600;color:${INK};">${escHtml(m.call.title)}</div>`
+      + `<div style="font-size:12.5px;color:${SUBTLE};">${escHtml(m.call.sub)}</div>`;
+    cr.appendChild(ic); cr.appendChild(tw); bub.appendChild(cr);
   } else if (att) {
     const fkey = att.split('/').pop()!.toLowerCase();
     const url = mediaMap[fkey];
     const ext = (fkey.match(/\.([a-z0-9]+)$/) || [])[1] || '';
+    const cap = P.extractCaption(m.text, att);
     if (url && /^(jpe?g|png|gif|webp|bmp|heic)$/.test(ext)) {
       const im = document.createElement('img');
       im.crossOrigin = 'anonymous';
       im.src = url;
-      im.style.cssText = 'max-width:100%;max-height:360px;border-radius:8px;display:block;object-fit:cover;'
-        + 'box-shadow:0 1px 2px rgba(0,0,0,.14);';
+      im.style.cssText = 'max-width:100%;max-height:360px;border-radius:7px;display:block;object-fit:cover;';
       bub.appendChild(im);
+      if (!cap) mediaOnly = true;
     } else {
       const ph = document.createElement('div');
       ph.textContent = P.mediaLabel(ext);
-      ph.style.cssText = 'color:#54656f;font-style:italic;';
+      ph.style.cssText = `color:${SUBTLE};font-style:italic;`;
       bub.appendChild(ph);
     }
-    const cap = P.extractCaption(m.text, att);
     if (cap) {
-      const cp = document.createElement('div');
-      cp.style.marginTop = '4px';
+      const cp = document.createElement('span');
+      cp.style.cssText = 'display:block;margin-top:4px;';
       cp.innerHTML = P.formatText(cap);
       bub.appendChild(cp);
     }
   } else if (P.PLACEHOLDERS.test(m.text)) {
     const ph = document.createElement('div');
     ph.textContent = P.placeholderLabel(m.text);
-    ph.style.cssText = 'color:#54656f;font-style:italic;';
+    ph.style.cssText = `color:${SUBTLE};font-style:italic;`;
     bub.appendChild(ph);
-  } else {
+  } else if (emojiOnly) {
     const tx = document.createElement('div');
+    tx.textContent = P.stripMarks(m.text);
+    tx.style.cssText = 'font-size:2.7em;line-height:1.15;';
+    bub.appendChild(tx);
+  } else {
+    const tx = document.createElement('span');
+    tx.style.display = 'inline';
     tx.innerHTML = P.formatText(m.text);
     bub.appendChild(tx);
   }
 
-  const tm = document.createElement('div');
-  tm.textContent = P.shortTime(m.time);
-  tm.style.cssText = 'font-size:10.5px;color:#8696a0;text-align:right;margin-top:3px;';
-  bub.appendChild(tm);
+  if (m.reactions && m.reactions.length) {
+    bub.style.marginBottom = '11px';
+    const rc = document.createElement('span');
+    rc.textContent = m.reactions.join(' ');
+    rc.style.cssText = `position:absolute;bottom:-11px;right:8px;background:${WA_IN};border-radius:12px;`
+      + 'padding:1px 6px;font-size:12px;box-shadow:0 1px 2px rgba(0,0,0,.18);white-space:nowrap;';
+    bub.appendChild(rc);
+  }
+
+  const meta = document.createElement('div');
+  if (mediaOnly) {
+    meta.style.cssText = 'position:absolute;right:12px;bottom:9px;display:flex;align-items:center;gap:3px;'
+      + 'font-size:11px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45);z-index:2;';
+  } else {
+    meta.style.cssText = `font-size:11px;color:${SUBTLE};float:right;margin:2px 0 -2px 8px;`
+      + 'display:flex;align-items:center;gap:3px;';
+  }
+  meta.innerHTML = `<span>${escHtml(P.shortTime(m.time))}</span>${out ? tickMarkup(m.tick, mediaOnly) : ''}`;
+  bub.appendChild(meta);
 
   row.appendChild(bub);
   return row;
