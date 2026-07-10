@@ -84,6 +84,7 @@ export default function App() {
   const [saveOpen, setSaveOpen] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
   const [bookExporting, setBookExporting] = useState(false);
+  const [bookProgress, setBookProgress] = useState<{ done: number; total: number } | null>(null);
   const [sharedLoading, setSharedLoading] = useState(!!new URLSearchParams(location.search).get('c'));
   const [toastMsg, setToastMsg] = useState('');
   const [session, setSession] = useState<Session | null>(null);
@@ -381,13 +382,18 @@ export default function App() {
 
   async function doExportBook(config: BookConfig) {
     setBookExporting(true);
+    setBookProgress({ done: 0, total: 0 });
     toast(t('tBook'), 0);
     try {
-      await exportBook({ title: contactTitle, meName, senders, dateOrder, messages, mediaMap, msgCount: stats.total, avatar, wallpaper }, config);
+      await exportBook(
+        { title: contactTitle, meName, senders, dateOrder, messages, mediaMap, msgCount: stats.total, avatar, wallpaper },
+        config,
+        (done, total) => setBookProgress({ done, total }),
+      );
       toast(t('tBookDone'), 2500);
       setBookOpen(false);
     } catch (e) { toast('❌ ' + ((e as Error).message || e), 4000); }
-    finally { setBookExporting(false); }
+    finally { setBookExporting(false); setBookProgress(null); }
   }
 
   async function translateWholeChat(from: FromLang, to: Lang2) {
@@ -567,7 +573,8 @@ export default function App() {
       <TranslateModal open={translateOpen} onClose={() => setTranslateOpen(false)}
         onTranslateChat={translateWholeChat} translating={translating} translated={translated} />
       <SaveModal open={saveOpen} onClose={() => setSaveOpen(false)} onSave={doSave} saving={saving} />
-      <BookModal open={bookOpen} onClose={() => setBookOpen(false)} onExport={doExportBook} exporting={bookExporting}
+      <BookModal open={bookOpen} onClose={() => setBookOpen(false)} onExport={doExportBook}
+        exporting={bookExporting} progress={bookProgress}
         defaultTitle={contactTitle} avatar={avatar} meName={meName} senders={senders}
         msgCount={stats.total} days={stats.days} mediaCount={stats.mediaCount} dateRange={bookDateRange} />
       <ResetPasswordModal open={recovery} onDone={() => setRecovery(false)} toast={toast} />

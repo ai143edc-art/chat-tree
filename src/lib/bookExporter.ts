@@ -169,6 +169,7 @@ function monthOf(dayLabel: string): string {
  */
 function chapterEl(monthYear: string, accent: string, serif: boolean): HTMLElement {
   const w = document.createElement('div');
+  w.dataset.kind = 'chapter';
   w.style.cssText = 'display:flex;justify-content:center;margin:26px 0 16px;';
   const nameStyle = serif
     ? `font-family:${SERIF_STACK};font-size:17px;font-style:italic;letter-spacing:.3px;`
@@ -185,6 +186,7 @@ function chapterEl(monthYear: string, accent: string, serif: boolean): HTMLEleme
 
 function dayEl(text: string): HTMLElement {
   const w = document.createElement('div');
+  w.dataset.kind = 'day';
   w.style.cssText = 'display:flex;justify-content:center;margin:14px 0 10px;';
   const p = document.createElement('span');
   p.textContent = text;
@@ -372,8 +374,18 @@ function msgEl(m: Message, out: boolean, isGroup: boolean, grouped: boolean, med
   return row;
 }
 
+/** Reports how far the export has got. `done` counts pages already drawn. */
+export type BookProgress = (done: number, total: number) => void;
+
+/**
+ * html2canvas holds the main thread for the whole of a page. Without a yield
+ * between pages the tab looks frozen and no progress ever paints — a long book
+ * is a couple of minutes of nothing.
+ */
+const breathe = () => new Promise<void>((r) => { setTimeout(r, 0); });
+
 /** Build a paginated, cover-fronted "keepsake book" PDF, styled by `config`. */
-export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<void> {
+export async function exportBook(meta: BookMeta, config?: BookConfig, onProgress?: BookProgress): Promise<void> {
   const { meName, senders, dateOrder, messages, mediaMap, avatar } = meta;
   if (!messages.length) throw new Error('Open a chat first.');
   const cfg = config || defaultBookConfig(meta.title);
@@ -554,10 +566,27 @@ export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<v
         }, [])
       : pageGroups.map((g) => [g]);
 
+    // Where each month opens. Rows are walked in reading order, so the first
+    // page a month appears on is the page a reader would turn to.
+    const chapters: { month: string; page: number }[] = [];
+    pages.forEach((cols, i) => {
+      for (const col of cols) for (const row of col) {
+        const m = row.dataset.month;
+        if (m && !chapters.some((c) => c.month === m)) chapters.push({ month: m, page: i + 1 });
+      }
+    });
+    const wantContents = cfg.showContents && cfg.showPageNumbers && chapters.length > 1;
+
     const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
     const pdf = new jsPDF({ unit: 'mm', format: [sz.w, sz.h], orientation: sz.w > sz.h ? 'landscape' : 'portrait' });
+    pdf.setProperties({ title, subject: cfg.subtitle || 'A conversation keepsake', author: between, creator: 'Chat Tree' });
     let pageAdded = false;
+
+    const totalPages = pages.length + (cfg.showCover ? 1 : 0) + (cfg.showTitlePage ? 1 : 0)
+      + (wantContents ? 1 : 0) + (cfg.showClosing ? 1 : 0);
+    let drawn = 0;
+    onProgress?.(0, totalPages);
 
     const addPage = async (el: HTMLElement) => {
       const c = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: th.paper, logging: false });
@@ -565,10 +594,35 @@ export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<v
       pageAdded = true;
       const imgH = sz.w * (c.height / c.width);
       pdf.addImage(c.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, sz.w, Math.min(imgH, sz.h));
+      onProgress?.(++drawn, totalPages);
+      await breathe();
     };
 
     if (cfg.showCover) await addPage(cover);
     if (cfg.showTitlePage) { book.appendChild(titlePage); await addPage(titlePage); titlePage.remove(); }
+
+    // ---- Contents (front matter: no running head, no folio) ----
+    if (wantContents) {
+      const toc = document.createElement('div');
+      toc.style.cssText = `position:relative;width:${PAGE_W}px;height:${PAGE_H}px;box-sizing:border-box;`
+        + `overflow:hidden;background:${th.paper};color:${INK};padding:118px 96px;`;
+      const leader = `border-bottom:1px dotted ${rgba(INK, 0.3)};`;
+      toc.innerHTML =
+        `<div style="text-align:center;font-family:${headFont};font-size:26px;letter-spacing:${cfg.serif ? '1px' : '4px'};`
+        + `${cfg.serif ? '' : 'text-transform:uppercase;font-weight:700;'}">Contents</div>`
+        + `<div style="width:52px;height:1px;background:${th.accent};opacity:.5;margin:20px auto 42px;"></div>`
+        + chapters.map(({ month, page: pg }) =>
+          '<div style="display:flex;align-items:baseline;gap:10px;margin:0 0 19px;">'
+          + `<span style="font-family:${headFont};font-size:16px;${cfg.serif ? 'font-style:italic;' : ''}white-space:nowrap;">${escHtml(month)}</span>`
+          + `<span style="flex:1;${leader}transform:translateY(-4px);"></span>`
+          + `<span style="font-family:${headFont};font-size:14px;color:${rgba(INK, 0.62)};">${pg}</span>`
+          + '</div>').join('');
+      toc.appendChild(gutterEl(false));
+      appendBorder(toc, cfg.borderKey, th);
+      book.appendChild(toc);
+      await addPage(toc);
+      toc.remove();
+    }
     content.remove();                                    // measured already; free it
 
     const total = pages.length;
@@ -580,7 +634,11 @@ export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<v
     for (let i = 0; i < total; i++) {
       const cols = pages[i];   // 1 or 2 columns of rows
       const recto = i % 2 === 0;
-      const month = cols[0][0]?.dataset.month || '';
+      const first = cols[0][0];
+      const month = first?.dataset.month || '';
+      // A page that doesn't open on a date or a chapter is picking a day back up.
+      const kind = first?.dataset.kind;
+      const chapter = month && kind !== 'day' && kind !== 'chapter' ? `${month} (cont.)` : month;
       const page = document.createElement('div');
       page.style.cssText = `position:relative;width:${PAGE_W}px;height:${PAGE_H}px;box-sizing:border-box;`
         + `overflow:hidden;background:${th.paper};`;
@@ -588,7 +646,7 @@ export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<v
       // Page furniture, printed on the paper — identical either side of the plate.
       page.appendChild(gutterEl(recto));
       appendBorder(page, cfg.borderKey, th);
-      page.appendChild(headEl(month, between, recto, th, cfg.serif));
+      page.appendChild(headEl(chapter, between, recto, th, cfg.serif));
       page.appendChild(headRuleEl(th));
 
       if (phone) {

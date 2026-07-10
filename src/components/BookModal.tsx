@@ -13,6 +13,7 @@ interface Props {
   onClose: () => void;
   onExport: (config: BookConfig) => void;
   exporting: boolean;
+  progress: { done: number; total: number } | null;
   defaultTitle: string;
   avatar: string | null;
   meName: string | null;
@@ -277,6 +278,7 @@ export default function BookModal(p: Props) {
               {toggle('showWallpaper', t('bkWallpaper'))}
               {toggle('showCover', t('bkCoverPage'))}
               {toggle('showTitlePage', t('bkTitlePage'))}
+              {toggle('showContents', t('bkContents'))}
               {toggle('showAvatar', t('bkAvatar'))}
               {toggle('showStats', t('bkStats'))}
               {toggle('showChapters', t('bkChapters'))}
@@ -303,6 +305,19 @@ export default function BookModal(p: Props) {
             ) : <p className="bk-tpl-none">{t('bkNoTpl')}</p>}
           </div>
         </div>
+
+        {/* A long book is minutes of html2canvas; show it moving or it reads as a hang. */}
+        {p.exporting && p.progress && (
+          <div className="bk-prog">
+            <div className="bk-prog-bar">
+              <span style={{ width: `${Math.round(100 * p.progress.done / Math.max(1, p.progress.total))}%` }} />
+            </div>
+            <div className="bk-prog-txt">
+              <span>{t('bkBuilding').replace('{a}', String(p.progress.done)).replace('{b}', String(p.progress.total))}</span>
+              <span className="bk-prog-note">{t('bkBuildWait')}</span>
+            </div>
+          </div>
+        )}
 
         <div className="bk-actions">
           <button className="bk-cancel" disabled={p.exporting} onClick={p.onClose}>{t('bkClose')}</button>

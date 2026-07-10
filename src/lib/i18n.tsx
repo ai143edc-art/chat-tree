@@ -142,7 +142,7 @@ const DICT = {
     // ---- Book Studio ----
     bkTitle: 'Book Studio', bkTitleLabel: 'Book title', bkSubtitle: 'Subtitle',
     bkTheme: 'Theme', bkBorder: 'Page border', bkInclude: 'Include',
-    bkCoverPage: 'Cover page', bkAvatar: 'Avatar on cover', bkStats: 'Stat chips',
+    bkCoverPage: 'Cover page', bkAvatar: 'Avatar on cover', bkStats: 'Stats on cover',
     bkChapters: 'Month chapters', bkPageNumbers: 'Page numbers', bkClosing: 'Closing page',
     bkTemplates: 'My templates', bkSaveTpl: 'Save', bkTplNamePh: 'Template name…',
     bkApply: 'Apply template', bkExportPdf: 'Export book PDF', bkPreview: 'Live preview',
@@ -150,7 +150,8 @@ const DICT = {
     bkClose: 'Close', bkDay: 'Day', bkDays: 'Days',
     bkDedication: 'Dedication', bkDedicationPh: 'e.g. For us. ❤️',
     bkSerif: 'Elegant serif', bkTitlePage: 'Title page', bkWallpaper: 'Chat wallpaper', bkSize: 'Page size',
-    bkPhoneFrame: '📱 Phone frame', bkTwoCol: '2 columns / page',
+    bkPhoneFrame: '📱 Phone frame', bkTwoCol: '2 columns / page', bkContents: 'Contents page',
+    bkBuilding: 'Page {a} of {b}', bkBuildWait: 'Keep this tab open while the book is drawn.',
     // ---- Share (QR) ----
     shareTitle: 'Share chat', shareScan: 'Scan to open this chat',
     shareCopy: 'Copy link', shareCopied: '✅ Link copied',
@@ -298,7 +299,7 @@ const DICT = {
     // ---- Book Studio ----
     bkTitle: 'बुक स्टूडियो', bkTitleLabel: 'बुक का शीर्षक', bkSubtitle: 'उपशीर्षक',
     bkTheme: 'थीम', bkBorder: 'पेज बॉर्डर', bkInclude: 'शामिल करें',
-    bkCoverPage: 'कवर पेज', bkAvatar: 'कवर पर अवतार', bkStats: 'स्टैट चिप्स',
+    bkCoverPage: 'कवर पेज', bkAvatar: 'कवर पर अवतार', bkStats: 'कवर पर आँकड़े',
     bkChapters: 'महीने के चैप्टर', bkPageNumbers: 'पेज नंबर', bkClosing: 'क्लोज़िंग पेज',
     bkTemplates: 'मेरे टेम्पलेट', bkSaveTpl: 'सेव', bkTplNamePh: 'टेम्पलेट का नाम…',
     bkApply: 'टेम्पलेट लगाएँ', bkExportPdf: 'बुक PDF एक्सपोर्ट करें', bkPreview: 'लाइव प्रीव्यू',
@@ -306,7 +307,8 @@ const DICT = {
     bkClose: 'बंद करें', bkDay: 'दिन', bkDays: 'दिन',
     bkDedication: 'समर्पण', bkDedicationPh: 'जैसे: हमारे लिए ❤️',
     bkSerif: 'सुंदर serif फ़ॉन्ट', bkTitlePage: 'टाइटल पेज', bkWallpaper: 'चैट वॉलपेपर', bkSize: 'पेज साइज़',
-    bkPhoneFrame: '📱 फ़ोन फ़्रेम', bkTwoCol: '2 कॉलम / पेज',
+    bkPhoneFrame: '📱 फ़ोन फ़्रेम', bkTwoCol: '2 कॉलम / पेज', bkContents: 'कंटेंट्स पेज',
+    bkBuilding: 'पेज {a} / {b}', bkBuildWait: 'किताब बनने तक यह टैब खुला रखें।',
     // ---- Share (QR) ----
     shareTitle: 'चैट शेयर करें', shareScan: 'ये चैट खोलने के लिए स्कैन करें',
     shareCopy: 'लिंक कॉपी करें', shareCopied: '✅ लिंक कॉपी हो गया',

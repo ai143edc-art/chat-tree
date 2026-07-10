@@ -756,6 +756,14 @@ body{
 .bk-cancel{padding:10px 16px;border:1px solid #dfe4e3;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;color:#111b21;}
 .bk-export{padding:10px 22px;border:none;border-radius:10px;background:#128c7e;color:#fff;font-weight:700;cursor:pointer;font-size:14px;}
 .bk-export:disabled,.bk-cancel:disabled{opacity:.6;cursor:default;}
+/* export progress — a long book is minutes of work, so show it moving */
+.bk-prog{margin-top:16px;}
+.bk-prog-bar{height:6px;border-radius:4px;background:#e6ebea;overflow:hidden;}
+.bk-prog-bar span{display:block;height:100%;background:#128c7e;border-radius:4px;
+  transition:width .18s ease-out;}
+.bk-prog-txt{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:7px;
+  font-size:12px;color:#54656f;}
+.bk-prog-note{color:#8696a0;font-size:11px;text-align:right;}
 /* live inside-page preview — page furniture on paper, chat on a mounted plate.
    Percentages mirror the exporter's px geometry so every page size stays true. */
 .bk-inside{position:relative;width:100%;border-radius:9px;overflow:hidden;margin-top:14px;color:#111b21;

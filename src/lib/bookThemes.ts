@@ -126,6 +126,7 @@ export interface BookConfig {
   twoColumns: boolean;    // two chat columns per page (fewer pages)
   showCover: boolean;
   showTitlePage: boolean; // inner title page after the cover
+  showContents: boolean;  // contents page listing each month and its page
   showAvatar: boolean;
   showStats: boolean;
   showChapters: boolean;
@@ -142,7 +143,7 @@ export function defaultBookConfig(title: string): BookConfig {
     title, subtitle: 'A conversation keepsake', dedication: '',
     themeKey: 'whatsapp', borderKey: 'hairline', sizeKey: 'a4', serif: true, showWallpaper: true,
     phoneFrame: false, twoColumns: false,
-    showCover: true, showTitlePage: true, showAvatar: true, showStats: true,
+    showCover: true, showTitlePage: true, showContents: true, showAvatar: true, showStats: true,
     showChapters: true, showPageNumbers: true, showClosing: true,
   };
 }
