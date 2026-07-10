@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import { useLang } from '../lib/i18n';
 import {
   BOOK_THEMES, BOOK_BORDERS, BOOK_SIZES, defaultBookConfig, themeOf, sizeOf,
-  weaveUrl, vignetteBg, swatchCss,
+  weaveUrl, vignetteBg, swatchCss, rgba,
   loadTemplates, saveTemplate, deleteTemplate,
 } from '../lib/bookThemes';
 import type { BookConfig, BookTemplate } from '../lib/bookThemes';
@@ -89,10 +89,15 @@ export default function BookModal(p: Props) {
   ].filter(Boolean).join('   ·   ');
 
   // ---- live inside-page preview bits ----
-  const DOODLE = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><g fill='none' stroke='%23dccfbe' stroke-width='2' stroke-linecap='round'><circle cx='20' cy='24' r='7'/><path d='M60 16 h22 v13 h-13 l-6 6 v-6 h-3 z'/><path d='M96 20 q6 -7 12 0'/><path d='M16 70 q7 -8 14 0'/><path d='M70 64 l4 8 8 1 -6 6 2 8 -8 -4 -8 4 2 -8 -6 -6 8 -1 z'/><rect x='96' y='62' width='18' height='14' rx='3'/><path d='M22 104 q7 -8 14 0'/><circle cx='92' cy='104' r='6'/></g></svg>\")";
-  const insideBg: CSSProperties = cfg.showWallpaper
-    ? { backgroundColor: '#efeae2', backgroundImage: DOODLE, backgroundSize: '54px 54px' }
-    : { background: th.paper };
+  const doodle = (ink: string) => "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><g fill='none' stroke='%23"
+    + ink.replace('#', '')
+    + "' stroke-width='2' stroke-linecap='round'><circle cx='20' cy='24' r='7'/><path d='M60 16 h22 v13 h-13 l-6 6 v-6 h-3 z'/><path d='M96 20 q6 -7 12 0'/><path d='M16 70 q7 -8 14 0'/><path d='M70 64 l4 8 8 1 -6 6 2 8 -8 -4 -8 4 2 -8 -6 -6 8 -1 z'/><rect x='96' y='62' width='18' height='14' rx='3'/><path d='M22 104 q7 -8 14 0'/><circle cx='92' cy='104' r='6'/></g></svg>\")";
+  // The plate wears the wallpaper; the paper around it is the page itself.
+  const plateBg: CSSProperties = cfg.showWallpaper
+    ? { backgroundColor: th.chatBg, backgroundImage: doodle(th.doodleInk), backgroundSize: '54px 54px' }
+    : { background: th.chatBg };
+  // "9 July 2026  —  18 July 2026" → "July 2026", the chapter for the running head.
+  const monthSample = (p.dateRange || '').split('—')[0].trim().split(/\s+/).slice(1).join(' ') || 'July 2026';
   const SAMPLE = [
     { out: false, txt: 'Kal milte hai? ☕' }, { out: true, txt: 'Haan pakka 👍' },
     { out: false, txt: '', media: true }, { out: true, txt: 'Perfect 🔥' },
@@ -107,13 +112,20 @@ export default function BookModal(p: Props) {
     </div>
   );
   const frameJsx = () => {
-    const c = th.accent, k = cfg.borderKey;
+    const c = rgba(th.accent, 0.42), k = cfg.borderKey;
     if (k === 'none') return null;
     const corners = (['tl', 'tr', 'bl', 'br'] as const).map((pos) => {
       const s: CSSProperties = { borderColor: c };
       if (pos[0] === 't') { s.top = 5; s.borderBottom = 'none'; } else { s.bottom = 5; s.borderTop = 'none'; }
       if (pos[1] === 'l') { s.left = 5; s.borderRight = 'none'; } else { s.right = 5; s.borderLeft = 'none'; }
       return <span key={pos} className="bk-fc" style={s} />;
+    });
+    // A diamond centred on each edge — the flourish that makes 'ornate' ornate.
+    const edges = (['t', 'b', 'l', 'r'] as const).map((e) => {
+      const s: CSSProperties = { background: th.accent };
+      if (e === 't') { s.top = 4; s.left = '50%'; } else if (e === 'b') { s.bottom = 4; s.left = '50%'; }
+      else if (e === 'l') { s.left = 4; s.top = '50%'; } else { s.right = 4; s.top = '50%'; }
+      return <span key={e} className={'bk-fd ' + e} style={s} />;
     });
     if (k === 'corners') return <>{corners}</>;
     const s: CSSProperties = { borderColor: c };
@@ -123,7 +135,7 @@ export default function BookModal(p: Props) {
       <>
         <span className="bk-fr" style={s} />
         {(k === 'double' || k === 'ornate') && <span className="bk-fr inner" style={{ borderColor: c }} />}
-        {k === 'ornate' && corners}
+        {k === 'ornate' && <>{corners}{edges}</>}
       </>
     );
   };
@@ -165,11 +177,19 @@ export default function BookModal(p: Props) {
             </div>
             <div className="bk-preview-cap">{t('bkPreview')} · Cover</div>
 
-            {/* inside / chat page — live */}
-            <div className="bk-inside" style={{ aspectRatio: `${sz.w}/${sz.h}`, ...(cfg.phoneFrame ? { background: th.paper } : insideBg) }}>
-              {!cfg.phoneFrame && frameJsx()}
+            {/* inside / chat page — live. Paper carries the furniture, the plate carries the chat. */}
+            <div className="bk-inside" style={{ aspectRatio: `${sz.w}/${sz.h}`, background: th.paper }}>
+              <span className="bk-gutter" />
+              {frameJsx()}
+              <div className="bk-rhead">
+                <span className="bk-rh-who">{between}</span>
+                <span className="bk-rh-chap" style={{ color: th.accent }}>{monthSample}</span>
+              </div>
+              <div className="bk-rrule" style={{ background: rgba(th.accent, 0.22) }}>
+                <i style={{ background: th.accent }} />
+              </div>
               {cfg.phoneFrame ? (
-                <div className="bk-ph">
+                <div className={'bk-ph' + (cfg.showPageNumbers ? '' : ' nofolio')}>
                   <div className="bk-ph-scr">
                     <div className="bk-ph-head">
                       <span className="bk-ph-back">‹</span>
@@ -179,22 +199,30 @@ export default function BookModal(p: Props) {
                       <span className="bk-ph-nm">{insideTitle}</span>
                       <span className="bk-ph-ic">⋮</span>
                     </div>
-                    <div className="bk-ph-body" style={insideBg}>
+                    <div className="bk-ph-body" style={plateBg}>
                       {cfg.showChapters && <div className="bkm-day">Today</div>}
                       {SAMPLE.map(bubble)}
                     </div>
                   </div>
                 </div>
-              ) : cfg.twoColumns ? (
-                <div className="bk-cols">
-                  <div className="bk-col">{cfg.showChapters && <div className="bkm-day">July</div>}{SAMPLE.slice(0, 3).map(bubble)}</div>
-                  <div className="bk-coldiv" style={{ background: th.accent }} />
-                  <div className="bk-col">{SAMPLE.slice(3).map(bubble)}</div>
-                </div>
               ) : (
-                <div className="bk-single">{cfg.showChapters && <div className="bkm-day">9 July</div>}{SAMPLE.map(bubble)}</div>
+                <div className={'bk-chatplate' + (cfg.showPageNumbers ? '' : ' nofolio')} style={plateBg}>
+                  {cfg.twoColumns ? (
+                    <div className="bk-cols">
+                      <div className="bk-col">{cfg.showChapters && <div className="bkm-day">July</div>}{SAMPLE.slice(0, 3).map(bubble)}</div>
+                      <div className="bk-coldiv" />
+                      <div className="bk-col">{SAMPLE.slice(3).map(bubble)}</div>
+                    </div>
+                  ) : (
+                    <div className="bk-single">{cfg.showChapters && <div className="bkm-day">9 July</div>}{SAMPLE.map(bubble)}</div>
+                  )}
+                </div>
               )}
-              {cfg.showPageNumbers && !cfg.phoneFrame && <div className="bk-pgn">1</div>}
+              {cfg.showPageNumbers && (
+                <div className="bk-folio">
+                  <i style={{ background: rgba(th.accent, 0.4) }} /><span>1</span><i style={{ background: rgba(th.accent, 0.4) }} />
+                </div>
+              )}
             </div>
             <div className="bk-preview-cap">Inside page</div>
           </div>

@@ -7,6 +7,11 @@
  * A cover is a piece of bookcloth with the type foil-stamped into it —
  * not a gradient card. `cloth` is the weave colour, `clothEdge` darkens the
  * vignette and spine, and everything printed on the cover is `foil`.
+ *
+ * The inside of the book is a different material: `paper` is the printed page,
+ * and the chat sits on a `chatBg` plate patterned in `doodleInk`. Those two
+ * are what make an Oxblood book read differently from a Deep Ocean one once
+ * you turn past the cover.
  */
 export interface BookTheme {
   key: string;
@@ -14,25 +19,41 @@ export interface BookTheme {
   cloth: string;      // bookcloth base colour
   clothEdge: string;  // vignette + spine shade
   foil: string;       // stamped type, rules and frame
-  accent: string;     // chapter dividers + footer accent on content pages
-  paper: string;      // content-page background
+  accent: string;     // running heads, chapter openers, folios, page frames
+  paper: string;      // the printed page the plate is mounted on
+  chatBg: string;     // the chat plate, a shade deeper than the paper
+  doodleInk: string;  // the wallpaper doodle drawn on that plate
   light?: boolean;    // a pale cloth stamped in dark foil
 }
 
 export const BOOK_THEMES: BookTheme[] = [
   { key: 'whatsapp', name: 'Forest Cloth',
-    cloth: '#0e3a33', clothEdge: '#06231e', foil: '#d7c79a', accent: '#0b6b5f', paper: '#efeae2' },
+    cloth: '#0e3a33', clothEdge: '#06231e', foil: '#d7c79a', accent: '#0b6b5f',
+    paper: '#efeae2', chatBg: '#e7e0d3', doodleInk: '#d0c4b1' },
   { key: 'rose', name: 'Oxblood (Love)',
-    cloth: '#5e1226', clothEdge: '#350a16', foil: '#e7bfae', accent: '#c9184a', paper: '#fbeef0' },
+    cloth: '#5e1226', clothEdge: '#350a16', foil: '#e7bfae', accent: '#c9184a',
+    paper: '#faf1f0', chatBg: '#f3e2e2', doodleInk: '#dcc0bd' },
   { key: 'midnight', name: 'Midnight Navy',
-    cloth: '#141c33', clothEdge: '#080c1a', foil: '#c6cde0', accent: '#5566a8', paper: '#eef0f6' },
+    cloth: '#141c33', clothEdge: '#080c1a', foil: '#c6cde0', accent: '#5566a8',
+    paper: '#eef0f6', chatBg: '#e3e7f0', doodleInk: '#c2c9dc' },
   { key: 'sunset', name: 'Burnt Clay',
-    cloth: '#6b2716', clothEdge: '#3d150c', foil: '#e6bf7f', accent: '#c14a24', paper: '#fbf0e8' },
+    cloth: '#6b2716', clothEdge: '#3d150c', foil: '#e6bf7f', accent: '#c14a24',
+    paper: '#fbf0e8', chatBg: '#f4e5d6', doodleInk: '#dfc2a4' },
   { key: 'ocean', name: 'Deep Ocean',
-    cloth: '#0d2f47', clothEdge: '#061a29', foil: '#bcd0dd', accent: '#1462a0', paper: '#e9f1f6' },
+    cloth: '#0d2f47', clothEdge: '#061a29', foil: '#bcd0dd', accent: '#1462a0',
+    paper: '#e9f1f6', chatBg: '#dee8f0', doodleInk: '#bbcfdc' },
   { key: 'cream', name: 'Ivory Linen',
-    cloth: '#eee6d6', clothEdge: '#ddd2ba', foil: '#7d5f2c', accent: '#a8842c', paper: '#faf5ea', light: true },
+    cloth: '#eee6d6', clothEdge: '#ddd2ba', foil: '#7d5f2c', accent: '#a8842c',
+    paper: '#faf5ea', chatBg: '#f1e9d8', doodleInk: '#dbceb2', light: true },
 ];
+
+/** rgba() from a #rgb / #rrggbb hex, for tinting rules and frames. */
+export function rgba(hex: string, a: number): string {
+  const h = hex.replace('#', '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const n = parseInt(full, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
 
 /**
  * A fine woven texture. Real bookcloth is a crosshatch you can barely see at
@@ -128,19 +149,6 @@ export function defaultBookConfig(title: string): BookConfig {
 
 export function themeOf(key: string): BookTheme {
   return BOOK_THEMES.find((t) => t.key === key) || BOOK_THEMES[0];
-}
-
-/** Inline CSS for a page frame element (absolute, inset), per border style + colour. */
-export function borderCss(key: string, color: string): string {
-  const base = 'position:absolute;inset:16px;pointer-events:none;';
-  switch (key) {
-    case 'hairline': return base + `border:1px solid ${color};`;
-    case 'double':   return base + `border:3px double ${color};`;
-    case 'rounded':  return base + `border:1.5px solid ${color};border-radius:14px;`;
-    case 'dotted':   return base + `border:2px dotted ${color};`;
-    case 'corners':  return '';   // rendered as four corner pieces instead
-    default:         return '';   // none
-  }
 }
 
 /* ---------------- Saved templates (localStorage) ---------------- */

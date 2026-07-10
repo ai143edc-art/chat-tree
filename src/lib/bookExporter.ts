@@ -1,29 +1,134 @@
 import * as P from './parser';
 import type { Message, DateOrder } from './parser';
-import { themeOf, sizeOf, defaultBookConfig, weaveCss, vignetteCss, SERIF_STACK, SANS_STACK } from './bookThemes';
-import type { BookConfig } from './bookThemes';
+import { themeOf, sizeOf, defaultBookConfig, weaveCss, vignetteCss, rgba, SERIF_STACK, SANS_STACK } from './bookThemes';
+import type { BookConfig, BookTheme } from './bookThemes';
 
-// The WhatsApp doodle wallpaper (same art the chat viewer uses) so book pages
-// look as lively as the chat when no custom wallpaper is set.
-const DOODLE = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'><g fill='none' stroke='%23dccfbe' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M34 46 q-9 -11 -17 -2 q-6 7 0 13 q5 6 17 15 q12 -9 17 -15 q6 -6 0 -13 q-8 -9 -17 2 z'/><path d='M100 30 h34 q6 0 6 6 v12 q0 6 -6 6 h-20 l-8 8 v-8 h-6 q-6 0 -6 -6 v-12 q0 -6 6 -6 z'/><circle cx='190' cy='36' r='2.2'/><circle cx='199' cy='36' r='2.2'/><circle cx='208' cy='36' r='2.2'/><path d='M16 108 q8 -11 16 0 q8 11 16 0'/><path d='M116 100 l4 9 l10 1 l-7 7 l2 10 l-9 -5 l-9 5 l2 -10 l-7 -7 l10 -1 z'/><rect x='182' y='100' width='30' height='22' rx='4'/><circle cx='197' cy='111' r='6'/><path d='M190 100 l3 -5 h8 l3 5'/><path d='M35 190 v-22 l16 -3 v22'/><circle cx='31' cy='190' r='4.5'/><circle cx='47' cy='187' r='4.5'/><path d='M104 178 h20 v10 q0 9 -10 9 q-10 0 -10 -9 z'/><path d='M124 180 q7 0 7 6 q0 6 -7 6'/><path d='M208 176 v14 M201 183 h14'/><circle cx='58' cy='232' r='7'/><path d='M120 240 q8 -9 16 0 q8 9 16 0'/><path d='M232 226 q-6 -7 -11 -1 q-4 4 0 8 q3 4 11 9 q8 -5 11 -9 q4 -4 0 -8 q-5 -6 -11 1 z'/><path d='M236 122 l8 8 l-8 8 l-8 -8 z'/><circle cx='72' cy='150' r='5'/><path d='M72 140 v-5 M72 160 v5 M62 150 h-5 M82 150 h5'/><path d='M150 62 q10 -6 20 0'/><circle cx='240' cy='196' r='3'/><path d='M18 62 q6 -8 12 0'/><path d='M160 150 h16 M168 142 v16'/></g></svg>";
-const doodleBg = (base: string) => `background-color:${base};background-image:url("${DOODLE}");background-size:220px 220px;`;
+// The WhatsApp doodle wallpaper (same art the chat viewer uses), drawn in the
+// theme's ink so a Deep Ocean book doesn't wear a Forest Cloth wallpaper.
+const DOODLE_ART = "<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'><g fill='none' stroke='%23__INK__' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M34 46 q-9 -11 -17 -2 q-6 7 0 13 q5 6 17 15 q12 -9 17 -15 q6 -6 0 -13 q-8 -9 -17 2 z'/><path d='M100 30 h34 q6 0 6 6 v12 q0 6 -6 6 h-20 l-8 8 v-8 h-6 q-6 0 -6 -6 v-12 q0 -6 6 -6 z'/><circle cx='190' cy='36' r='2.2'/><circle cx='199' cy='36' r='2.2'/><circle cx='208' cy='36' r='2.2'/><path d='M16 108 q8 -11 16 0 q8 11 16 0'/><path d='M116 100 l4 9 l10 1 l-7 7 l2 10 l-9 -5 l-9 5 l2 -10 l-7 -7 l10 -1 z'/><rect x='182' y='100' width='30' height='22' rx='4'/><circle cx='197' cy='111' r='6'/><path d='M190 100 l3 -5 h8 l3 5'/><path d='M35 190 v-22 l16 -3 v22'/><circle cx='31' cy='190' r='4.5'/><circle cx='47' cy='187' r='4.5'/><path d='M104 178 h20 v10 q0 9 -10 9 q-10 0 -10 -9 z'/><path d='M124 180 q7 0 7 6 q0 6 -7 6'/><path d='M208 176 v14 M201 183 h14'/><circle cx='58' cy='232' r='7'/><path d='M120 240 q8 -9 16 0 q8 9 16 0'/><path d='M232 226 q-6 -7 -11 -1 q-4 4 0 8 q3 4 11 9 q8 -5 11 -9 q4 -4 0 -8 q-5 -6 -11 1 z'/><path d='M236 122 l8 8 l-8 8 l-8 -8 z'/><circle cx='72' cy='150' r='5'/><path d='M72 140 v-5 M72 160 v5 M62 150 h-5 M82 150 h5'/><path d='M150 62 q10 -6 20 0'/><circle cx='240' cy='196' r='3'/><path d='M18 62 q6 -8 12 0'/><path d='M160 150 h16 M168 142 v16'/></g></svg>";
+const doodleUrl = (ink: string) => `url("data:image/svg+xml;utf8,${DOODLE_ART.replace('__INK__', ink.replace('#', ''))}")`;
+const doodleBg = (base: string, ink: string) =>
+  `background-color:${base};background-image:${doodleUrl(ink)};background-size:220px 220px;`;
+
+/* ---------------- Page furniture ----------------
+ * A printed page is a frame, a running head, a plate and a folio; the chat is
+ * only the thing mounted on it. These build the parts around the conversation. */
+const MARGIN_X = 46;      // side margin of head / plate / folio
+const BORDER_INSET = 22;  // decorative frame
+const HEAD_Y = 40;        // running-head text
+const HEAD_RULE_Y = 62;
+const PLATE_TOP = 76;
+const PLATE_BOT = 62;     // when a folio is printed
+const PLATE_BOT_BARE = 40;
+const FOLIO_Y = 36;       // clear of the frame, which is drawn at BORDER_INSET
+const PLATE_PAD = 11;
+
+/** A small rotated square — the ornament on ornate frames and running heads. */
+function diamondCss(color: string, size: number, op: number): string {
+  return `width:${size}px;height:${size}px;background:${color};opacity:${op};transform:rotate(45deg);`;
+}
 
 /** Append a decorative page frame (per style) to a page element. */
-function appendBorder(page: HTMLElement, key: string, color: string): void {
-  const add = (css: string) => { const d = document.createElement('div'); d.style.cssText = 'position:absolute;pointer-events:none;' + css; page.appendChild(d); };
-  if (key === 'hairline') add(`inset:18px;border:1px solid ${color};`);
-  else if (key === 'rounded') add(`inset:16px;border:1.5px solid ${color};border-radius:16px;`);
-  else if (key === 'dotted') add(`inset:18px;border:2px dotted ${color};`);
-  else if (key === 'double') { add(`inset:16px;border:1.6px solid ${color};`); add(`inset:22px;border:0.8px solid ${color};opacity:.6;`); }
-  else if (key === 'corners' || key === 'ornate') {
-    if (key === 'ornate') { add(`inset:16px;border:1.5px solid ${color};`); add(`inset:22px;border:0.8px solid ${color};opacity:.55;`); }
-    const s = 30;
-    const corner = (pos: string) => add(`width:${s}px;height:${s}px;border:2px solid ${color};${pos}`);
-    corner('top:13px;left:13px;border-right:none;border-bottom:none;');
-    corner('top:13px;right:13px;border-left:none;border-bottom:none;');
-    corner('bottom:13px;left:13px;border-right:none;border-top:none;');
-    corner('bottom:13px;right:13px;border-left:none;border-top:none;');
+function appendBorder(page: HTMLElement, key: string, th: BookTheme): void {
+  if (key === 'none') return;
+  const c = rgba(th.accent, 0.42);
+  const faint = rgba(th.accent, 0.24);
+  const add = (css: string) => {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:absolute;pointer-events:none;' + css;
+    page.appendChild(d);
+  };
+  const i = BORDER_INSET;
+  const brackets = (len: number, weight: number) => {
+    const corner = (pos: string) => add(`width:${len}px;height:${len}px;border:${weight}px solid ${c};${pos}`);
+    corner(`top:${i - 9}px;left:${i - 9}px;border-right:none;border-bottom:none;`);
+    corner(`top:${i - 9}px;right:${i - 9}px;border-left:none;border-bottom:none;`);
+    corner(`bottom:${i - 9}px;left:${i - 9}px;border-right:none;border-top:none;`);
+    corner(`bottom:${i - 9}px;right:${i - 9}px;border-left:none;border-top:none;`);
+  };
+
+  if (key === 'hairline') add(`inset:${i}px;border:1px solid ${c};`);
+  else if (key === 'rounded') add(`inset:${i}px;border:1.5px solid ${c};border-radius:18px;`);
+  else if (key === 'dotted') add(`inset:${i}px;border:2px dotted ${c};`);
+  else if (key === 'double') {
+    add(`inset:${i}px;border:1.6px solid ${c};`);
+    add(`inset:${i + 6}px;border:0.8px solid ${faint};`);
+  } else if (key === 'corners') {
+    brackets(34, 2);
+    // a diamond tucked inside each bracket, so the corners read as deliberate
+    const d = (pos: string) => add(pos + diamondCss(th.accent, 4, 0.5));
+    d(`top:${i + 4}px;left:${i + 4}px;`); d(`top:${i + 4}px;right:${i + 4}px;`);
+    d(`bottom:${i + 4}px;left:${i + 4}px;`); d(`bottom:${i + 4}px;right:${i + 4}px;`);
+  } else if (key === 'ornate') {
+    add(`inset:${i}px;border:1.5px solid ${c};`);
+    add(`inset:${i + 7}px;border:0.8px solid ${faint};`);
+    brackets(26, 1.4);
+    // filled squares where the rules meet, and a diamond centred on every edge
+    const sq = (pos: string) => add(`width:5px;height:5px;background:${th.accent};opacity:.55;${pos}`);
+    sq(`top:${i - 2}px;left:${i - 2}px;`); sq(`top:${i - 2}px;right:${i - 2}px;`);
+    sq(`bottom:${i - 2}px;left:${i - 2}px;`); sq(`bottom:${i - 2}px;right:${i - 2}px;`);
+    add(`top:${i - 4}px;left:50%;margin-left:-4px;` + diamondCss(th.accent, 8, 0.5));
+    add(`bottom:${i - 4}px;left:50%;margin-left:-4px;` + diamondCss(th.accent, 8, 0.5));
+    add(`left:${i - 4}px;top:50%;margin-top:-4px;` + diamondCss(th.accent, 8, 0.5));
+    add(`right:${i - 4}px;top:50%;margin-top:-4px;` + diamondCss(th.accent, 8, 0.5));
   }
+}
+
+/** The page curving into the binding: a soft shade down the gutter edge. */
+function gutterEl(recto: boolean): HTMLElement {
+  const g = document.createElement('div');
+  g.style.cssText = `position:absolute;top:0;bottom:0;${recto ? 'left:0;' : 'right:0;'}width:58px;pointer-events:none;`
+    + `background:linear-gradient(${recto ? 90 : 270}deg,rgba(0,0,0,.085) 0%,rgba(0,0,0,.028) 40%,rgba(0,0,0,0) 100%);`;
+  return g;
+}
+
+/**
+ * Running head: the chapter on the outer edge, the people on the inner one,
+ * mirrored between recto and verso the way a bound book does it.
+ */
+function headEl(chapter: string, who: string, recto: boolean, th: BookTheme, serif: boolean): HTMLElement {
+  const h = document.createElement('div');
+  h.style.cssText = `position:absolute;left:${MARGIN_X}px;right:${MARGIN_X}px;top:${HEAD_Y}px;`
+    + 'display:flex;align-items:baseline;justify-content:space-between;gap:18px;';
+  const chap = `<span style="font-family:${serif ? SERIF_STACK : SANS_STACK};font-style:italic;font-size:12.5px;`
+    + `color:${th.accent};white-space:nowrap;">${escHtml(chapter)}</span>`;
+  const name = `<span style="font-size:9px;letter-spacing:2.6px;text-transform:uppercase;color:${rgba(INK, 0.4)};`
+    + `overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(who)}</span>`;
+  h.innerHTML = recto ? name + chap : chap + name;
+  return h;
+}
+
+/** The hairline under the running head, pinched by a diamond at its centre. */
+function headRuleEl(th: BookTheme): HTMLElement {
+  const w = document.createElement('div');
+  w.style.cssText = `position:absolute;left:${MARGIN_X}px;right:${MARGIN_X}px;top:${HEAD_RULE_Y}px;height:1px;`
+    + `background:${rgba(th.accent, 0.22)};`;
+  const d = document.createElement('div');
+  d.style.cssText = 'position:absolute;left:50%;top:-2px;margin-left:-2.5px;' + diamondCss(th.accent, 5, 0.45);
+  w.appendChild(d);
+  return w;
+}
+
+/** A centred folio between two short rules — no branding on the reading pages. */
+function folioEl(n: number, th: BookTheme, serif: boolean): HTMLElement {
+  const f = document.createElement('div');
+  f.style.cssText = `position:absolute;left:0;right:0;bottom:${FOLIO_Y}px;display:flex;`
+    + 'align-items:center;justify-content:center;gap:11px;';
+  const rule = `<span style="width:16px;height:1px;background:${rgba(th.accent, 0.4)};"></span>`;
+  f.innerHTML = rule
+    + `<span style="font-family:${serif ? SERIF_STACK : SANS_STACK};font-size:11.5px;letter-spacing:1px;`
+    + `color:${rgba(INK, 0.55)};">${n}</span>` + rule;
+  return f;
+}
+
+/** The chat plate: the wallpapered surface the conversation is mounted on. */
+function plateEl(bgCss: string, folio: boolean): HTMLElement {
+  const p = document.createElement('div');
+  p.style.cssText = `position:absolute;left:${MARGIN_X}px;right:${MARGIN_X}px;top:${PLATE_TOP}px;`
+    + `bottom:${folio ? PLATE_BOT : PLATE_BOT_BARE}px;border-radius:10px;overflow:hidden;box-sizing:border-box;`
+    + `padding:${PLATE_PAD}px;border:1px solid rgba(0,0,0,.08);`
+    + 'box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 5px 15px rgba(0,0,0,.10);' + bgCss;
+  return p;
 }
 
 export interface BookMeta {
@@ -58,19 +163,23 @@ function monthOf(dayLabel: string): string {
   return parts.length >= 3 ? parts.slice(1).join(' ') : dayLabel;
 }
 
-/** A book-style chapter header shown when the month changes. */
+/**
+ * A chapter opener when the month changes. It sits on the wallpapered plate,
+ * so it needs its own paper band to read against the doodle.
+ */
 function chapterEl(monthYear: string, accent: string, serif: boolean): HTMLElement {
   const w = document.createElement('div');
-  w.style.cssText = 'display:flex;flex-direction:column;align-items:center;margin:28px 0 18px;';
+  w.style.cssText = 'display:flex;justify-content:center;margin:26px 0 16px;';
   const nameStyle = serif
-    ? `font-family:${SERIF_STACK};font-size:19px;font-style:italic;letter-spacing:.3px;`
-    : 'font-size:11px;letter-spacing:3px;font-weight:700;text-transform:uppercase;';
+    ? `font-family:${SERIF_STACK};font-size:17px;font-style:italic;letter-spacing:.3px;`
+    : 'font-size:10.5px;letter-spacing:3px;font-weight:700;text-transform:uppercase;';
+  const rule = `<span style="width:24px;height:1px;background:${accent};opacity:.55;"></span>`;
   w.innerHTML =
-    `<div style="display:flex;align-items:center;gap:13px;color:${accent};">`
-    + `<span style="width:30px;height:1px;background:${accent};opacity:.6;"></span>`
-    + `<span style="${nameStyle}">${escHtml(monthYear)}</span>`
-    + `<span style="width:30px;height:1px;background:${accent};opacity:.6;"></span>`
-    + `</div>`;
+    `<span style="display:inline-flex;align-items:center;gap:12px;color:${accent};`
+    + 'background:rgba(255,255,255,.74);border:1px solid rgba(0,0,0,.05);border-radius:20px;'
+    + 'padding:6px 17px;box-shadow:0 1px 2px rgba(0,0,0,.07);">'
+    + rule + `<span style="${nameStyle}">${escHtml(monthYear)}</span>` + rule
+    + '</span>';
   return w;
 }
 
@@ -355,6 +464,8 @@ export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<v
   if (cfg.showCover) book.appendChild(cover);
 
   // ---- Inner title page (paper, editorial) ----
+  // Front matter carries no running head, no folio and no branding — just the
+  // same frame as the reading pages, so the two feel cut from one book.
   const titlePage = document.createElement('div');
   titlePage.style.cssText = `position:relative;height:${PAGE_H}px;box-sizing:border-box;display:flex;flex-direction:column;`
     + `align-items:center;justify-content:center;text-align:center;padding:120px 90px;background:${th.paper};color:${INK};`;
@@ -366,29 +477,36 @@ export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<v
     + (range ? `<div style="font-size:12px;color:${SUBTLE};margin-top:12px;letter-spacing:2px;text-transform:uppercase;">${escHtml(range)}</div>` : '')
     + (cfg.dedication
       ? `<div style="font-family:${headFont};font-style:italic;font-size:17px;color:#4a5a62;margin-top:64px;max-width:70%;line-height:1.6;">${escHtml(cfg.dedication)}</div>`
-      : '')
-    + `<div style="position:absolute;bottom:70px;left:0;right:0;font-size:11px;color:${SUBTLE};letter-spacing:1px;">Made with 💚 Chat Tree</div>`;
+      : '');
+  titlePage.appendChild(gutterEl(true));
+  appendBorder(titlePage, cfg.borderKey, th);
 
   // ---- Content ----
   const phone = cfg.phoneFrame;
   const twoCol = cfg.twoColumns && !phone;             // two chat columns per page
-  const PHONE_W = 384, FRAME_PAD = 11, HEADER_H = 52;   // phone-frame geometry
+  const PHONE_W = 384, FRAME_PAD = 11, HEADER_H = 52, STATUS_H = 20;  // phone-frame geometry
   const COL_GAP = 28;
-  const colW = Math.floor((PAGE_W - 88 - COL_GAP) / 2); // column width inside 44px page padding
-  const measureW = phone ? PHONE_W : (twoCol ? colW : PAGE_W - 88);
+  const PLATE_W = PAGE_W - 2 * MARGIN_X - 2 * PLATE_PAD;  // usable width on the plate
+  const colW = Math.floor((PLATE_W - COL_GAP) / 2);
+  const measureW = phone ? PHONE_W : (twoCol ? colW : PLATE_W);
   const content = document.createElement('div');
-  content.style.cssText = `width:${measureW}px;box-sizing:border-box;padding:${phone ? '6px 8px 10px' : '2px 0'};`;
+  content.style.cssText = `width:${measureW}px;box-sizing:border-box;padding:${phone ? '6px 8px 10px' : '0'};`;
   let lastD: string | null = null, prevSender: string | null = null, lastMonth: string | null = null;
+  let curMonth = '';
+  // Every row remembers its month so the running head can name the chapter the
+  // page is actually in, even when the page opens mid-conversation.
+  const push = (el: HTMLElement) => { el.dataset.month = curMonth; content.appendChild(el); };
   for (const m of messages) {
     if (m.date !== lastD) {
       const dl = P.formatDay(m.date, dateOrder);
       const mo = monthOf(dl);
-      if (cfg.showChapters && mo !== lastMonth) { content.appendChild(chapterEl(mo, th.accent, cfg.serif)); lastMonth = mo; }
-      content.appendChild(dayEl(dl)); lastD = m.date; prevSender = null;
+      curMonth = mo;
+      if (cfg.showChapters && mo !== lastMonth) { push(chapterEl(mo, th.accent, cfg.serif)); lastMonth = mo; }
+      push(dayEl(dl)); lastD = m.date; prevSender = null;
     }
-    if (m.system || !m.sender) { content.appendChild(sysEl(m.text)); prevSender = null; continue; }
+    if (m.system || !m.sender) { push(sysEl(m.text)); prevSender = null; continue; }
     const out = m.sender === meName;
-    content.appendChild(msgEl(m, out, isGroup, prevSender === m.sender, mediaMap));
+    push(msgEl(m, out, isGroup, prevSender === m.sender, mediaMap));
     prevSender = m.sender;
   }
   book.appendChild(content);
@@ -408,17 +526,13 @@ export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<v
 
     // Split messages into pages at message boundaries (never mid-message).
     const cTop = content.getBoundingClientRect().top;
-    const PAGE_PAD_TOP = 44;
-    const PAGE_PAD_BOTTOM = cfg.showPageNumbers ? 60 : 40;
-    // phone-frame geometry (used both to paginate and to build each phone)
-    const phTopV = 26;
-    const phFooter = cfg.showPageNumbers ? 46 : 26;
-    const phOuterH = PAGE_H - phTopV - phFooter;
+    // The plate defines the type area; the phone, when used, occupies the same box.
+    const plateBottom = cfg.showPageNumbers ? PLATE_BOT : PLATE_BOT_BARE;
+    const plateInnerH = PAGE_H - PLATE_TOP - plateBottom - 2 * PLATE_PAD;
+    const phOuterH = PAGE_H - PLATE_TOP - plateBottom;
     const phScreenH = phOuterH - 2 * FRAME_PAD;
-    const phBodyH = phScreenH - HEADER_H;
-    const contentPageH = phone
-      ? phBodyH - 20
-      : PAGE_H - PAGE_PAD_TOP - PAGE_PAD_BOTTOM - 8;
+    const phBodyH = phScreenH - HEADER_H - STATUS_H;
+    const contentPageH = phone ? phBodyH - 20 : plateInnerH;
     const rows = Array.from(content.children) as HTMLElement[];
     const pageGroups: HTMLElement[][] = [];
     let cur: HTMLElement[] = [];
@@ -458,26 +572,42 @@ export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<v
     content.remove();                                    // measured already; free it
 
     const total = pages.length;
-    // page background: chat wallpaper (custom, or the WhatsApp doodle) or clean theme paper
-    const pageBg = cfg.showWallpaper
-      ? (meta.wallpaper ? `background:${meta.wallpaper};` : doodleBg('#efeae2'))
-      : `background:${th.paper};`;
+    // The chat plate wears the chat wallpaper — custom if the reader set one,
+    // otherwise the doodle inked in this theme's colour.
+    const plateBg = cfg.showWallpaper
+      ? (meta.wallpaper ? `background:${meta.wallpaper};` : doodleBg(th.chatBg, th.doodleInk))
+      : `background:${th.chatBg};`;
     for (let i = 0; i < total; i++) {
       const cols = pages[i];   // 1 or 2 columns of rows
+      const recto = i % 2 === 0;
+      const month = cols[0][0]?.dataset.month || '';
       const page = document.createElement('div');
+      page.style.cssText = `position:relative;width:${PAGE_W}px;height:${PAGE_H}px;box-sizing:border-box;`
+        + `overflow:hidden;background:${th.paper};`;
+
+      // Page furniture, printed on the paper — identical either side of the plate.
+      page.appendChild(gutterEl(recto));
+      appendBorder(page, cfg.borderKey, th);
+      page.appendChild(headEl(month, between, recto, th, cfg.serif));
+      page.appendChild(headRuleEl(th));
+
       if (phone) {
-        // Clean page so the phone mockup stands out; chat sits inside the phone.
-        page.style.cssText = `position:relative;width:${PAGE_W}px;height:${PAGE_H}px;box-sizing:border-box;overflow:hidden;background:${th.paper};`;
-        const bodyBg = meta.wallpaper ? `background:${meta.wallpaper};` : doodleBg('#efeae2');
+        // The chat sits inside a phone, and the phone sits where the plate would.
+        const bodyBg = meta.wallpaper ? `background:${meta.wallpaper};` : doodleBg(th.chatBg, th.doodleInk);
         const frame = document.createElement('div');
-        frame.style.cssText = `position:absolute;left:50%;top:${phTopV}px;transform:translateX(-50%);`
+        frame.style.cssText = `position:absolute;left:50%;top:${PLATE_TOP}px;transform:translateX(-50%);`
           + `width:${PHONE_W + 2 * FRAME_PAD}px;height:${phOuterH}px;background:#0b1013;`
           + `border-radius:44px;padding:${FRAME_PAD}px;box-sizing:border-box;box-shadow:0 16px 36px rgba(0,0,0,.28);`;
         const screen = document.createElement('div');
         screen.style.cssText = `position:relative;width:${PHONE_W}px;height:${phScreenH}px;border-radius:34px;overflow:hidden;`
-          + 'display:flex;flex-direction:column;background:#efeae2;';
+          + `display:flex;flex-direction:column;background:${th.chatBg};`;
+        // The notch gets its own strip above the header, or it punches a hole
+        // through the contact's name.
+        const status = document.createElement('div');
+        status.style.cssText = `position:relative;height:${STATUS_H}px;flex:0 0 auto;background:#075e54;`;
         const notch = document.createElement('div');
-        notch.style.cssText = 'position:absolute;top:7px;left:50%;transform:translateX(-50%);width:98px;height:15px;background:#0b1013;border-radius:11px;z-index:5;';
+        notch.style.cssText = 'position:absolute;top:3px;left:50%;transform:translateX(-50%);width:98px;height:14px;background:#0b1013;border-radius:10px;';
+        status.appendChild(notch);
         const header = document.createElement('div');
         header.style.cssText = `height:${HEADER_H}px;flex:0 0 auto;display:flex;align-items:center;gap:9px;padding:0 12px;box-sizing:border-box;background:#075e54;color:#fff;`;
         const ava = (cfg.showAvatar && avatar)
@@ -490,18 +620,17 @@ export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<v
         const body = document.createElement('div');
         body.style.cssText = 'flex:1;overflow:hidden;padding:9px 8px 10px;box-sizing:border-box;' + bodyBg;
         for (const el of cols[0]) body.appendChild(el);
-        screen.appendChild(notch); screen.appendChild(header); screen.appendChild(body);
+        screen.appendChild(status); screen.appendChild(header); screen.appendChild(body);
         frame.appendChild(screen);
         page.appendChild(frame);
       } else {
-        page.style.cssText = `position:relative;width:${PAGE_W}px;height:${PAGE_H}px;box-sizing:border-box;`
-          + `padding:${PAGE_PAD_TOP}px 44px ${PAGE_PAD_BOTTOM}px;overflow:hidden;` + pageBg;
-        appendBorder(page, cfg.borderKey, th.accent);
+        const plate = plateEl(plateBg, cfg.showPageNumbers);
         const colWrap = document.createElement('div');
         colWrap.style.cssText = `display:flex;gap:${COL_GAP}px;height:100%;align-items:flex-start;position:relative;`;
         if (twoCol && cols.length === 2) {
           const div = document.createElement('div');
-          div.style.cssText = `position:absolute;left:50%;top:0;bottom:0;width:1px;transform:translateX(-50%);background:${th.accent};opacity:.22;`;
+          div.style.cssText = 'position:absolute;left:50%;top:0;bottom:0;width:1px;transform:translateX(-50%);'
+            + 'background:rgba(0,0,0,.10);box-shadow:1px 0 0 rgba(255,255,255,.45);';
           colWrap.appendChild(div);
         }
         cols.forEach((colRows) => {
@@ -510,22 +639,10 @@ export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<v
           for (const el of colRows) col.appendChild(el);
           colWrap.appendChild(col);
         });
-        page.appendChild(colWrap);
+        plate.appendChild(colWrap);
+        page.appendChild(plate);
       }
-      if (cfg.showPageNumbers) {
-        const footer = document.createElement('div');
-        footer.style.cssText = 'position:absolute;left:44px;right:44px;bottom:24px;display:flex;'
-          + `justify-content:space-between;align-items:center;font-size:10.5px;color:${SUBTLE};`;
-        footer.innerHTML =
-          `<span style="max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(title)}</span>`
-          + `<span>💬 Chat Tree &nbsp;·&nbsp; ${i + 1} / ${total}</span>`;
-        page.appendChild(footer);
-        if (!phone) {
-          const rule = document.createElement('div');
-          rule.style.cssText = 'position:absolute;left:44px;right:44px;bottom:44px;height:1px;background:rgba(11,20,26,.08);';
-          page.appendChild(rule);
-        }
-      }
+      if (cfg.showPageNumbers) page.appendChild(folioEl(i + 1, th, cfg.serif));
       book.appendChild(page);
       await addPage(page);
       page.remove();
