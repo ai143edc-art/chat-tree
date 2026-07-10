@@ -5,7 +5,14 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# Single-page app: serve index.html for any path
+# A hashed chunk that no longer exists must 404, not fall through to index.html —
+# otherwise the browser tries to parse HTML as a JS module.
+[[redirects]]
+  from = "/assets/*"
+  to = "/assets/:splat"
+  status = 404
+
+# Single-page app: serve index.html for any other path
 [[redirects]]
   from = "/*"
   to = "/index.html"
