@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import { useLang } from '../lib/i18n';
 import {
   BOOK_THEMES, BOOK_BORDERS, BOOK_SIZES, defaultBookConfig, themeOf, sizeOf,
+  weaveUrl, vignetteBg, swatchCss,
   loadTemplates, saveTemplate, deleteTemplate,
 } from '../lib/bookThemes';
 import type { BookConfig, BookTemplate } from '../lib/bookThemes';
@@ -19,6 +20,7 @@ interface Props {
   msgCount: number;
   days: number;
   mediaCount: number;
+  dateRange?: string;
 }
 
 export default function BookModal(p: Props) {
@@ -35,7 +37,6 @@ export default function BookModal(p: Props) {
 
   const th = themeOf(cfg.themeKey);
   const sz = sizeOf(cfg.sizeKey);
-  const headFont = cfg.serif ? "Georgia,'Times New Roman',serif" : 'inherit';
   const set = (patch: Partial<BookConfig>) => setCfg((c) => ({ ...c, ...patch }));
 
   const between = useMemo(() => {
@@ -77,11 +78,15 @@ export default function BookModal(p: Props) {
     </label>
   );
 
-  const chips = [
-    [p.msgCount.toLocaleString(), t('sMessages')],
-    [p.days.toLocaleString(), p.days === 1 ? t('bkDay') : t('bkDays')],
-    ...(p.mediaCount ? [[p.mediaCount.toLocaleString(), t('sMedia')]] : []),
-  ] as [string, string][];
+  // The cover is bookcloth, so the stats become one delicate colophon line.
+  const weaveImg = weaveUrl(th);
+  const vignette = vignetteBg(th);
+  const range = p.dateRange || '';
+  const colophon = [
+    `${p.msgCount.toLocaleString()} messages`,
+    `${p.days.toLocaleString()} ${p.days === 1 ? 'day' : 'days'}`,
+    p.mediaCount ? `${p.mediaCount.toLocaleString()} photograph${p.mediaCount === 1 ? '' : 's'}` : '',
+  ].filter(Boolean).join('   ·   ');
 
   // ---- live inside-page preview bits ----
   const DOODLE = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><g fill='none' stroke='%23dccfbe' stroke-width='2' stroke-linecap='round'><circle cx='20' cy='24' r='7'/><path d='M60 16 h22 v13 h-13 l-6 6 v-6 h-3 z'/><path d='M96 20 q6 -7 12 0'/><path d='M16 70 q7 -8 14 0'/><path d='M70 64 l4 8 8 1 -6 6 2 8 -8 -4 -8 4 2 -8 -6 -6 8 -1 z'/><rect x='96' y='62' width='18' height='14' rx='3'/><path d='M22 104 q7 -8 14 0'/><circle cx='92' cy='104' r='6'/></g></svg>\")";
@@ -133,27 +138,29 @@ export default function BookModal(p: Props) {
         <div className="bk-grid">
           {/* ---- live preview ---- */}
           <div className="bk-preview">
-            <div className="bk-cover" style={{ background: th.coverBg, color: th.ink, aspectRatio: `${sz.w}/${sz.h}` }}>
-              <div className="bk-frame" style={{ borderColor: th.frame }} />
-              <div className="bk-mark" style={{ color: th.inkSoft }}>C H A T · T R E E</div>
-              {cfg.showAvatar && p.avatar
-                ? <img className="bk-med" src={p.avatar} alt="" style={{ borderColor: th.frame }} />
-                : <div className="bk-med bk-med-emoji" style={{ background: th.chip, borderColor: th.frame }}>💬</div>}
-              <div className="bk-ttl" style={{ fontFamily: headFont, fontWeight: cfg.serif ? 700 : 800 }}>{cfg.title || p.defaultTitle}</div>
-              <div className="bk-div" style={{ background: th.inkSoft }} />
-              <div className="bk-who">{between}</div>
-              {cfg.showStats && (
-                <div className="bk-chips">
-                  {chips.map(([v, l]) => (
-                    <div key={l} className="bk-chip" style={{ background: th.chip, borderColor: th.chipBorder }}>
-                      <b>{v}</b><span>{l}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="bk-tag" style={{ color: th.inkSoft }}>
-                {cfg.subtitle && <em style={{ color: th.ink, fontFamily: headFont }}>{cfg.subtitle}</em>}
-                <div>Made with 💚 Chat Tree</div>
+            <div className="bk-cover" style={{ background: th.cloth, color: th.foil, aspectRatio: `${sz.w}/${sz.h}` }}>
+              <div className="bk-weave" style={{ backgroundImage: weaveImg }} />
+              <div className="bk-vig" style={{ background: vignette }} />
+              <div className="bk-spine" style={{ background: `linear-gradient(90deg,${th.clothEdge} 0%,${th.clothEdge} 55%,rgba(0,0,0,.20) 92%,rgba(255,255,255,.07) 100%)` }} />
+              <div className="bk-fr1" style={{ borderColor: th.foil }} />
+              <div className="bk-fr2" style={{ borderColor: th.foil }} />
+              <div className="bk-stamp">
+                {cfg.showAvatar && p.avatar && (
+                  <div className="bk-plate">
+                    <img src={p.avatar} alt="" />
+                    <span className="bk-plate-ring" style={{ borderColor: th.foil }} />
+                    <span className="bk-plate-halo" style={{ borderColor: th.foil }} />
+                  </div>
+                )}
+                <div className="bk-rule" style={{ background: th.foil }} />
+                <div className={'bk-ttl' + (cfg.serif ? ' serif' : ' sans')}>{cfg.title || p.defaultTitle}</div>
+                {cfg.subtitle && <div className="bk-sub">{cfg.subtitle}</div>}
+                <div className="bk-rule mt" style={{ background: th.foil }} />
+                <div className="bk-who">{between}</div>
+              </div>
+              <div className="bk-foot">
+                {range && <div className="bk-range">{range}</div>}
+                {cfg.showStats && <div className="bk-colophon">{colophon}</div>}
               </div>
             </div>
             <div className="bk-preview-cap">{t('bkPreview')} · Cover</div>
@@ -212,7 +219,7 @@ export default function BookModal(p: Props) {
               {BOOK_THEMES.map((tm) => (
                 <button key={tm.key} className={'bk-sw' + (cfg.themeKey === tm.key ? ' on' : '')}
                   title={tm.name} onClick={() => set({ themeKey: tm.key })}>
-                  <span className="bk-sw-dot" style={{ background: tm.coverBg }} />
+                  <span className="bk-sw-dot" style={{ background: swatchCss(tm) }} />
                   <span className="bk-sw-nm">{tm.name}</span>
                 </button>
               ))}
@@ -259,7 +266,7 @@ export default function BookModal(p: Props) {
               <div className="bk-tpl-list">
                 {tpls.map((tp) => (
                   <div key={tp.name} className="bk-tpl">
-                    <span className="bk-tpl-dot" style={{ background: themeOf(tp.config.themeKey).coverBg }} />
+                    <span className="bk-tpl-dot" style={{ background: swatchCss(themeOf(tp.config.themeKey)) }} />
                     <span className="bk-tpl-nm" title={t('bkApply')} onClick={() => applyTpl(tp)}>{tp.name}</span>
                     <button className="bk-tpl-del" title={t('hDelete')} onClick={() => delTpl(tp.name)}>🗑️</button>
                   </div>

@@ -1,6 +1,6 @@
 import * as P from './parser';
 import type { Message, DateOrder } from './parser';
-import { themeOf, sizeOf, defaultBookConfig, SERIF_STACK, SANS_STACK } from './bookThemes';
+import { themeOf, sizeOf, defaultBookConfig, weaveCss, vignetteCss, SERIF_STACK, SANS_STACK } from './bookThemes';
 import type { BookConfig } from './bookThemes';
 
 // The WhatsApp doodle wallpaper (same art the chat viewer uses) so book pages
@@ -263,16 +263,6 @@ function msgEl(m: Message, out: boolean, isGroup: boolean, grouped: boolean, med
   return row;
 }
 
-/** Small stat chip for the cover, coloured by the chosen theme. */
-function chip(value: string, label: string, bg: string, border: string): string {
-  return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;`
-    + `background:${bg};border:1px solid ${border};`
-    + `border-radius:12px;padding:11px 18px;min-width:74px;">`
-    + `<span style="font-size:22px;font-weight:800;line-height:1;">${escHtml(value)}</span>`
-    + `<span style="font-size:11px;letter-spacing:.6px;opacity:.85;text-transform:uppercase;">${escHtml(label)}</span>`
-    + `</div>`;
-}
-
 /** Build a paginated, cover-fronted "keepsake book" PDF, styled by `config`. */
 export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<void> {
   const { meName, senders, dateOrder, messages, mediaMap, avatar } = meta;
@@ -307,40 +297,61 @@ export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<v
   const between = isGroup ? senders.slice(0, 5).join(', ')
     : (meName && others[0] ? `${others[0]}  &  ${meName}` : title);
 
-  const medallion = (cfg.showAvatar && avatar)
-    ? `<img src="${escHtml(avatar)}" crossorigin="anonymous" style="width:118px;height:118px;border-radius:50%;`
-      + `object-fit:cover;border:3px solid ${th.frame};box-shadow:0 6px 22px rgba(0,0,0,.28);"/>`
-    : `<div style="width:118px;height:118px;border-radius:50%;display:flex;align-items:center;justify-content:center;`
-      + `font-size:56px;background:${th.chip};border:3px solid ${th.frame};box-shadow:0 6px 22px rgba(0,0,0,.22);">💬</div>`;
+  // A piece of bookcloth: woven texture, a vignette, a bound spine, and
+  // everything on it foil-stamped. No chips, no logo, no gradient card.
+  const SPINE = 30;
+  const foilRule = (w: number, op: number, mt = 0) =>
+    `<div style="width:${w}px;height:1px;background:${th.foil};opacity:${op};margin-top:${mt}px;"></div>`;
+
+  // If there's a real avatar it becomes a locket-style portrait plate.
+  // If there isn't, nothing takes its place — the typography carries the cover.
+  const portrait = (cfg.showAvatar && avatar)
+    ? `<div style="position:relative;width:96px;height:96px;margin-bottom:46px;">`
+      + `<img src="${escHtml(avatar)}" crossorigin="anonymous" style="width:96px;height:96px;border-radius:50%;object-fit:cover;display:block;"/>`
+      + `<div style="position:absolute;inset:0;border:2px solid ${th.foil};opacity:.85;border-radius:50%;"></div>`
+      + `<div style="position:absolute;inset:-9px;border:1px solid ${th.foil};opacity:.45;border-radius:50%;"></div>`
+      + `</div>`
+    : '';
+
+  const colophon = cfg.showStats
+    ? [`${meta.msgCount.toLocaleString()} messages`,
+       `${days.toLocaleString()} ${days === 1 ? 'day' : 'days'}`,
+       mediaCount ? `${mediaCount.toLocaleString()} photograph${mediaCount === 1 ? '' : 's'}` : '',
+      ].filter(Boolean).join('   ·   ')
+    : '';
+
+  const titleCss = cfg.serif
+    ? `font-family:${SERIF_STACK};font-size:47px;font-weight:400;letter-spacing:.4px;line-height:1.16;`
+    : `font-family:${SANS_STACK};font-size:30px;font-weight:600;letter-spacing:6px;text-transform:uppercase;line-height:1.35;`;
+  const deboss = th.light ? '0 1px 0 rgba(255,255,255,.75)' : '0 1px 0 rgba(0,0,0,.45)';
 
   const cover = document.createElement('div');
-  cover.style.cssText = `position:relative;height:${PAGE_H}px;box-sizing:border-box;display:flex;flex-direction:column;`
-    + `align-items:center;justify-content:center;text-align:center;padding:86px 64px;color:${th.ink};overflow:hidden;`
-    + `background:${th.coverBg};`;
-  const ornament = `<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:16px 0;color:${th.inkSoft};">`
-    + `<span style="width:44px;height:1px;background:currentColor;opacity:.7;"></span>`
-    + `<span style="font-size:11px;">◆</span>`
-    + `<span style="width:44px;height:1px;background:currentColor;opacity:.7;"></span></div>`;
+  cover.style.cssText = `position:relative;height:${PAGE_H}px;box-sizing:border-box;overflow:hidden;`
+    + `background:${th.cloth};color:${th.foil};`;
   cover.innerHTML =
-    `<div style="position:absolute;inset:30px;border:1.5px solid ${th.frame};border-radius:16px;pointer-events:none;"></div>`
-    + `<div style="position:absolute;top:56px;left:0;right:0;text-align:center;font-size:12px;letter-spacing:5px;`
-    + `font-weight:700;color:${th.inkSoft};">C H A T · T R E E</div>`
-    + medallion
-    + `<div style="font-family:${headFont};font-size:46px;font-weight:${cfg.serif ? 700 : 800};line-height:1.15;margin:26px 0 4px;max-width:560px;">${escHtml(title)}</div>`
-    + ornament
-    + `<div style="font-size:21px;font-weight:600;">${escHtml(between)}</div>`
-    + (range ? `<div style="font-size:12.5px;color:${th.inkSoft};margin-top:10px;letter-spacing:2px;text-transform:uppercase;">${escHtml(range)}</div>` : '')
-    + (cfg.showStats
-      ? `<div style="display:flex;gap:14px;margin-top:32px;">`
-        + chip(meta.msgCount.toLocaleString(), 'Messages', th.chip, th.chipBorder)
-        + chip(days.toLocaleString(), days === 1 ? 'Day' : 'Days', th.chip, th.chipBorder)
-        + (mediaCount ? chip(mediaCount.toLocaleString(), 'Media', th.chip, th.chipBorder) : '')
-        + `</div>`
+    `<div style="position:absolute;inset:0;${weaveCss(th)}"></div>`
+    + `<div style="position:absolute;inset:0;${vignetteCss(th)}"></div>`
+    + `<div style="position:absolute;left:0;top:0;bottom:0;width:${SPINE}px;background:linear-gradient(90deg,`
+    + `${th.clothEdge} 0%,${th.clothEdge} 55%,rgba(0,0,0,.20) 92%,rgba(255,255,255,.07) 100%);"></div>`
+    + `<div style="position:absolute;top:36px;right:36px;bottom:36px;left:${SPINE + 26}px;border:1.2px solid ${th.foil};opacity:.5;"></div>`
+    + `<div style="position:absolute;top:42px;right:42px;bottom:42px;left:${SPINE + 32}px;border:.7px solid ${th.foil};opacity:.28;"></div>`
+    // stamped block, sitting a touch above true centre
+    + `<div style="position:absolute;inset:0;padding:0 76px 156px ${SPINE + 76}px;box-sizing:border-box;`
+    + `display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">`
+    + portrait
+    + foilRule(52, .5)
+    + `<div style="${titleCss}margin-top:28px;max-width:520px;text-shadow:${deboss};">${escHtml(title)}</div>`
+    + (cfg.subtitle
+      ? `<div style="font-family:${SERIF_STACK};font-style:italic;font-size:16px;opacity:.6;margin-top:16px;">${escHtml(cfg.subtitle)}</div>`
       : '')
-    + '<div style="position:absolute;bottom:52px;left:0;right:0;text-align:center;">'
-    + (cfg.subtitle ? `<div style="font-family:${headFont};font-size:16px;color:${th.ink};opacity:.9;font-style:italic;">${escHtml(cfg.subtitle)}</div>` : '')
-    + `<div style="font-size:12px;color:${th.inkSoft};margin-top:6px;letter-spacing:.5px;">Made with 💚 Chat Tree</div>`
-    + '</div>';
+    + foilRule(52, .5, 28)
+    + `<div style="font-size:12.5px;letter-spacing:3.4px;text-transform:uppercase;opacity:.82;margin-top:28px;`
+    + `max-width:440px;line-height:1.8;">${escHtml(between)}</div>`
+    + `</div>`
+    + `<div style="position:absolute;left:${SPINE + 76}px;right:76px;bottom:76px;text-align:center;">`
+    + (range ? `<div style="font-size:10.5px;letter-spacing:2.6px;text-transform:uppercase;opacity:.56;">${escHtml(range)}</div>` : '')
+    + (colophon ? `<div style="font-size:9.5px;letter-spacing:1.8px;text-transform:uppercase;opacity:.4;margin-top:15px;">${escHtml(colophon)}</div>` : '')
+    + `</div>`;
   if (cfg.showCover) book.appendChild(cover);
 
   // ---- Inner title page (paper, editorial) ----
@@ -522,18 +533,26 @@ export async function exportBook(meta: BookMeta, config?: BookConfig): Promise<v
 
     // ---- Closing page ----
     if (cfg.showClosing) {
+      // The back board of the same jacket — this is the only page that signs itself.
       const end = document.createElement('div');
-      end.style.cssText = `position:relative;height:${PAGE_H}px;box-sizing:border-box;display:flex;flex-direction:column;`
-        + `align-items:center;justify-content:center;text-align:center;padding:80px 64px;color:${th.ink};overflow:hidden;`
-        + `background:${th.coverBg};`;
+      end.style.cssText = `position:relative;height:${PAGE_H}px;box-sizing:border-box;overflow:hidden;`
+        + `background:${th.cloth};color:${th.foil};`;
       end.innerHTML =
-        `<div style="position:absolute;inset:30px;border:1.5px solid ${th.frame};border-radius:16px;"></div>`
-        + '<div style="font-size:52px;margin-bottom:14px;">💚</div>'
-        + `<div style="font-family:${headFont};font-size:32px;font-weight:${cfg.serif ? 700 : 800};">The end… for now</div>`
-        + `<div style="font-size:16px;color:${th.ink};opacity:.9;margin-top:14px;max-width:460px;line-height:1.5;">`
-        + `${escHtml(meta.msgCount.toLocaleString())} messages across ${escHtml(days.toLocaleString())} ${days === 1 ? 'day' : 'days'}, `
-        + `kept as a keepsake.</div>`
-        + `<div style="position:absolute;bottom:52px;left:0;right:0;text-align:center;font-size:12px;color:${th.inkSoft};letter-spacing:.5px;">Made with 💚 Chat Tree</div>`;
+        `<div style="position:absolute;inset:0;${weaveCss(th)}"></div>`
+        + `<div style="position:absolute;inset:0;${vignetteCss(th)}"></div>`
+        + `<div style="position:absolute;left:0;top:0;bottom:0;width:${SPINE}px;background:linear-gradient(90deg,`
+        + `${th.clothEdge} 0%,${th.clothEdge} 55%,rgba(0,0,0,.20) 92%,rgba(255,255,255,.07) 100%);"></div>`
+        + `<div style="position:absolute;top:36px;right:36px;bottom:36px;left:${SPINE + 26}px;border:1.2px solid ${th.foil};opacity:.5;"></div>`
+        + `<div style="position:absolute;inset:0;padding:0 76px 90px ${SPINE + 76}px;box-sizing:border-box;`
+        + `display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">`
+        + foilRule(52, .5)
+        + `<div style="font-family:${SERIF_STACK};font-size:30px;font-weight:400;margin-top:28px;text-shadow:${deboss};">The end — for now</div>`
+        + `<div style="font-size:10.5px;letter-spacing:2.6px;text-transform:uppercase;opacity:.56;margin-top:26px;line-height:1.9;max-width:380px;">`
+        + `${escHtml(meta.msgCount.toLocaleString())} messages across ${escHtml(days.toLocaleString())} ${days === 1 ? 'day' : 'days'}</div>`
+        + foilRule(52, .5, 30)
+        + `</div>`
+        + `<div style="position:absolute;left:${SPINE + 76}px;right:76px;bottom:76px;text-align:center;`
+        + `font-size:9.5px;letter-spacing:2px;text-transform:uppercase;opacity:.4;">Made with Chat Tree</div>`;
       book.appendChild(end);
       await addPage(end);
       end.remove();

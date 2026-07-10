@@ -3,45 +3,69 @@
  * Everything the export needs to render a personalised keepsake book.
  */
 
+/**
+ * A cover is a piece of bookcloth with the type foil-stamped into it —
+ * not a gradient card. `cloth` is the weave colour, `clothEdge` darkens the
+ * vignette and spine, and everything printed on the cover is `foil`.
+ */
 export interface BookTheme {
   key: string;
   name: string;
-  coverBg: string;    // CSS background for cover / closing pages
-  ink: string;        // text colour on the cover
-  inkSoft: string;    // muted text on the cover
+  cloth: string;      // bookcloth base colour
+  clothEdge: string;  // vignette + spine shade
+  foil: string;       // stamped type, rules and frame
   accent: string;     // chapter dividers + footer accent on content pages
   paper: string;      // content-page background
-  frame: string;      // decorative inner-frame line on cover
-  chip: string;       // cover stat-chip background
-  chipBorder: string; // cover stat-chip border
+  light?: boolean;    // a pale cloth stamped in dark foil
 }
 
 export const BOOK_THEMES: BookTheme[] = [
-  { key: 'whatsapp', name: 'WhatsApp Green',
-    coverBg: 'radial-gradient(120% 80% at 50% 0%,#128c7e 0%,#0b6b5f 45%,#053d36 100%)',
-    ink: '#ffffff', inkSoft: 'rgba(255,255,255,.85)', accent: '#0b6b5f', paper: '#efeae2',
-    frame: 'rgba(255,255,255,.28)', chip: 'rgba(255,255,255,.12)', chipBorder: 'rgba(255,255,255,.25)' },
-  { key: 'rose', name: 'Rose (Love)',
-    coverBg: 'radial-gradient(120% 80% at 50% 0%,#ff6f91 0%,#c9184a 48%,#7a1030 100%)',
-    ink: '#ffffff', inkSoft: 'rgba(255,255,255,.85)', accent: '#c9184a', paper: '#fbeef0',
-    frame: 'rgba(255,255,255,.32)', chip: 'rgba(255,255,255,.14)', chipBorder: 'rgba(255,255,255,.3)' },
-  { key: 'midnight', name: 'Midnight',
-    coverBg: 'radial-gradient(120% 80% at 50% 0%,#3b4a80 0%,#1f2a52 45%,#0a0f24 100%)',
-    ink: '#ffffff', inkSoft: 'rgba(255,255,255,.8)', accent: '#5566a8', paper: '#eef0f6',
-    frame: 'rgba(255,255,255,.24)', chip: 'rgba(255,255,255,.1)', chipBorder: 'rgba(255,255,255,.22)' },
-  { key: 'sunset', name: 'Sunset',
-    coverBg: 'radial-gradient(120% 80% at 50% 0%,#ff9a5a 0%,#e0592f 48%,#8f2d1c 100%)',
-    ink: '#ffffff', inkSoft: 'rgba(255,255,255,.85)', accent: '#c14a24', paper: '#fbf0e8',
-    frame: 'rgba(255,255,255,.3)', chip: 'rgba(255,255,255,.14)', chipBorder: 'rgba(255,255,255,.28)' },
-  { key: 'ocean', name: 'Ocean',
-    coverBg: 'radial-gradient(120% 80% at 50% 0%,#2aa8c4 0%,#1462a0 48%,#082a52 100%)',
-    ink: '#ffffff', inkSoft: 'rgba(255,255,255,.85)', accent: '#1462a0', paper: '#e9f1f6',
-    frame: 'rgba(255,255,255,.28)', chip: 'rgba(255,255,255,.12)', chipBorder: 'rgba(255,255,255,.26)' },
-  { key: 'cream', name: 'Minimal Cream',
-    coverBg: 'linear-gradient(160deg,#f7f0e2 0%,#efe4cd 100%)',
-    ink: '#4a3b28', inkSoft: 'rgba(74,59,40,.72)', accent: '#a8842c', paper: '#faf5ea',
-    frame: 'rgba(74,59,40,.28)', chip: 'rgba(74,59,40,.06)', chipBorder: 'rgba(74,59,40,.18)' },
+  { key: 'whatsapp', name: 'Forest Cloth',
+    cloth: '#0e3a33', clothEdge: '#06231e', foil: '#d7c79a', accent: '#0b6b5f', paper: '#efeae2' },
+  { key: 'rose', name: 'Oxblood (Love)',
+    cloth: '#5e1226', clothEdge: '#350a16', foil: '#e7bfae', accent: '#c9184a', paper: '#fbeef0' },
+  { key: 'midnight', name: 'Midnight Navy',
+    cloth: '#141c33', clothEdge: '#080c1a', foil: '#c6cde0', accent: '#5566a8', paper: '#eef0f6' },
+  { key: 'sunset', name: 'Burnt Clay',
+    cloth: '#6b2716', clothEdge: '#3d150c', foil: '#e6bf7f', accent: '#c14a24', paper: '#fbf0e8' },
+  { key: 'ocean', name: 'Deep Ocean',
+    cloth: '#0d2f47', clothEdge: '#061a29', foil: '#bcd0dd', accent: '#1462a0', paper: '#e9f1f6' },
+  { key: 'cream', name: 'Ivory Linen',
+    cloth: '#eee6d6', clothEdge: '#ddd2ba', foil: '#7d5f2c', accent: '#a8842c', paper: '#faf5ea', light: true },
 ];
+
+/**
+ * A fine woven texture. Real bookcloth is a crosshatch you can barely see at
+ * arm's length, so keep the pitch tight and the contrast almost nothing —
+ * anything stronger reads as graph paper.
+ */
+export const WEAVE_TILE = 5;
+export function weaveUrl(th: BookTheme): string {
+  const hex = th.light ? '3a2f1c' : 'ffffff';
+  const op = th.light ? '0.05' : '0.035';
+  const t = WEAVE_TILE;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${t}' height='${t}'>`
+    + `<g stroke='%23${hex}' stroke-opacity='${op}' stroke-width='0.5'>`
+    + `<path d='M0 .25h${t}'/><path d='M.25 0v${t}'/></g></svg>`;
+  return `url("data:image/svg+xml;utf8,${svg}")`;
+}
+export function weaveCss(th: BookTheme): string {
+  return `background-image:${weaveUrl(th)};background-size:${WEAVE_TILE}px ${WEAVE_TILE}px;`;
+}
+
+/** The darkening vignette that gives the cloth its depth. */
+export function vignetteBg(th: BookTheme): string {
+  const shade = th.light ? 'rgba(90,70,40,.16)' : 'rgba(0,0,0,.42)';
+  return `radial-gradient(118% 86% at 50% 38%,rgba(0,0,0,0) 44%,${shade} 100%)`;
+}
+export function vignetteCss(th: BookTheme): string {
+  return `background:${vignetteBg(th)};`;
+}
+
+/** Swatch used in Book Studio's theme picker. */
+export function swatchCss(th: BookTheme): string {
+  return `linear-gradient(135deg,${th.cloth} 0%,${th.cloth} 55%,${th.clothEdge} 100%)`;
+}
 
 export interface BookSize { key: string; name: string; w: number; h: number }  // mm, portrait
 export const BOOK_SIZES: BookSize[] = [

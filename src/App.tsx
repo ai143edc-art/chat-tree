@@ -139,6 +139,13 @@ export default function App() {
     return out;
   }, [messages]);
 
+  // First → last chat day, stamped on the book cover.
+  const bookDateRange = useMemo(() => {
+    const f = messages.find((m) => m.date)?.date;
+    const l = [...messages].reverse().find((m) => m.date)?.date;
+    return f && l ? `${P.formatDay(f, dateOrder)}  —  ${P.formatDay(l, dateOrder)}` : '';
+  }, [messages, dateOrder]);
+
   const filterActive = !!(filter.sender || filter.from || filter.to || filter.mediaOnly);
 
   // Indices to hide (never removed) so search / edit / index alignment all stay intact.
@@ -562,7 +569,7 @@ export default function App() {
       <SaveModal open={saveOpen} onClose={() => setSaveOpen(false)} onSave={doSave} saving={saving} />
       <BookModal open={bookOpen} onClose={() => setBookOpen(false)} onExport={doExportBook} exporting={bookExporting}
         defaultTitle={contactTitle} avatar={avatar} meName={meName} senders={senders}
-        msgCount={stats.total} days={stats.days} mediaCount={stats.mediaCount} />
+        msgCount={stats.total} days={stats.days} mediaCount={stats.mediaCount} dateRange={bookDateRange} />
       <ResetPasswordModal open={recovery} onDone={() => setRecovery(false)} toast={toast} />
       <div className={'toast' + (toastMsg ? ' show' : '')}>{toastMsg}</div>
     </>
