@@ -152,6 +152,13 @@ const DICT = {
     bkSerif: 'Elegant serif', bkTitlePage: 'Title page', bkWallpaper: 'Chat wallpaper', bkSize: 'Page size',
     bkPhoneFrame: '📱 Phone frame', bkTwoCol: '2 columns / page', bkContents: 'Contents page',
     bkBuilding: 'Page {a} of {b}', bkBuildWait: 'Keep this tab open while the book is drawn.',
+    // ---- Keepsake section ----
+    keepTitle: 'Made to be kept',
+    keepBody: 'Turn the whole conversation into a bound keepsake book — a bookcloth cover stamped in foil, a chapter for every month, a contents page and a folio on every leaf.',
+    keepP1: 'Six cloth themes, seven page sizes',
+    keepP2: 'Bubbles print exactly as you see them — ticks, replies, reactions, photos',
+    keepP3: 'Send it to a printer, or just keep the PDF',
+    keepAlt: 'An open keepsake book, a printed chat on its page',
     // ---- Share (QR) ----
     shareTitle: 'Share chat', shareScan: 'Scan to open this chat',
     shareCopy: 'Copy link', shareCopied: '✅ Link copied',
@@ -309,6 +316,13 @@ const DICT = {
     bkSerif: 'सुंदर serif फ़ॉन्ट', bkTitlePage: 'टाइटल पेज', bkWallpaper: 'चैट वॉलपेपर', bkSize: 'पेज साइज़',
     bkPhoneFrame: '📱 फ़ोन फ़्रेम', bkTwoCol: '2 कॉलम / पेज', bkContents: 'कंटेंट्स पेज',
     bkBuilding: 'पेज {a} / {b}', bkBuildWait: 'किताब बनने तक यह टैब खुला रखें।',
+    // ---- Keepsake section ----
+    keepTitle: 'सँभालकर रखने के लिए',
+    keepBody: 'पूरी बातचीत को एक जिल्दबंद यादगार किताब बना दें — फ़ॉइल में छपा बुककलॉथ कवर, हर महीने का अपना चैप्टर, कंटेंट्स पेज और हर पन्ने पर पेज नंबर।',
+    keepP1: 'छह कपड़े की थीम, सात पेज साइज़',
+    keepP2: 'बबल बिल्कुल वैसे ही छपते हैं — टिक, रिप्लाई, रिएक्शन, फ़ोटो',
+    keepP3: 'प्रिंट करवा लें, या बस PDF रख लें',
+    keepAlt: 'खुली हुई यादगार किताब, जिसके पन्ने पर छपी हुई चैट है',
     // ---- Share (QR) ----
     shareTitle: 'चैट शेयर करें', shareScan: 'ये चैट खोलने के लिए स्कैन करें',
     shareCopy: 'लिंक कॉपी करें', shareCopied: '✅ लिंक कॉपी हो गया',

@@ -731,6 +731,22 @@ body{
 .lp-step h3{font-size:19px;margin-bottom:6px;}
 .lp-step p{color:#54656f;font-size:15px;margin:0;}
 @media (max-width:760px){ .lp-steps::before{display:none;} }
+/* Keepsake band. The render carries its own colour, so it is matted like a
+   print rather than bled into the page — a photograph is allowed to be blue. */
+.lp-keep{display:flex;align-items:center;gap:clamp(28px,5vw,56px);flex-wrap:wrap;}
+.lp-keep-art{flex:1 1 340px;max-width:520px;padding:10px;background:#fff;
+  border:1px solid #e8eeec;border-radius:20px;
+  box-shadow:0 26px 56px -24px rgba(6,35,30,.42),0 2px 8px rgba(11,20,26,.05);}
+.lp-keep-art img{display:block;width:100%;height:auto;border-radius:12px;}
+.lp-keep-txt{flex:1 1 320px;}
+.lp-keep-txt>h2{font-size:31px;font-weight:800;text-align:left;margin-bottom:16px;}
+.lp-keep-txt>p{color:#54656f;font-size:17px;margin:0 0 20px;}
+.lp-keep-list{list-style:none;margin:0 0 26px;padding:0;display:flex;flex-direction:column;gap:11px;}
+.lp-keep-list li{position:relative;padding-left:30px;color:#3f5058;font-size:15.5px;}
+.lp-keep-list li::before{content:'';position:absolute;left:0;top:6px;width:18px;height:18px;border-radius:50%;
+  background:linear-gradient(145deg,#e9f8f1,#cdeade);border:1px solid #bfe3d3;}
+.lp-keep-list li::after{content:'';position:absolute;left:6px;top:11px;width:5px;height:9px;
+  border:solid #0a7a67;border-width:0 1.8px 1.8px 0;transform:rotate(42deg);}
 .lp-uses{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
 .lp-use{background:linear-gradient(150deg,#ecfaf3,#dcf2e7);color:#0a7a5f;font-weight:600;padding:11px 20px;
   border-radius:24px;font-size:15px;border:1px solid #cfeade;

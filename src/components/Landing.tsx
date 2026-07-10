@@ -69,7 +69,13 @@ export default function Landing({ onLaunch, onPrivacy, onTerms }: { onLaunch: ()
     const io = new IntersectionObserver((entries) => {
       for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
     }, { rootMargin: '0px 0px -12% 0px' });
-    items.forEach((n) => io.observe(n));
+    // Anything already at or above the fold is shown outright. The observer only
+    // fires on a crossing, so a restored scroll position or a deep link would
+    // otherwise leave every section above it invisible for good.
+    items.forEach((n) => {
+      if (n.getBoundingClientRect().top < window.innerHeight) n.classList.add('in');
+      else io.observe(n);
+    });
     return () => io.disconnect();
   }, []);
 
@@ -174,6 +180,25 @@ export default function Landing({ onLaunch, onPrivacy, onTerms }: { onLaunch: ()
               <p>{s.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* The photograph is cropped to the printed page: the facing collage page in
+          the original render is not something the exporter actually produces. */}
+      <section className="lp-sec lp-keep">
+        <div className="lp-keep-art lp-reveal">
+          <img src="/keepsake-book.webp" width={700} height={676}
+            loading="lazy" decoding="async" alt={t('keepAlt')} />
+        </div>
+        <div className="lp-keep-txt lp-reveal">
+          <h2>{t('keepTitle')}</h2>
+          <p>{t('keepBody')}</p>
+          <ul className="lp-keep-list">
+            <li>{t('keepP1')}</li>
+            <li>{t('keepP2')}</li>
+            <li>{t('keepP3')}</li>
+          </ul>
+          <button className="lp-cta" onClick={onLaunch}>{t('ctaCreate')}</button>
         </div>
       </section>
 
