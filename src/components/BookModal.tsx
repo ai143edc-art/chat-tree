@@ -50,12 +50,29 @@ export default function BookModal(p: Props) {
     setTpls(saveTemplate(name, cfg));
     setTplName('');
   }
-  function applyTpl(tp: BookTemplate) { setCfg({ ...tp.config, title: cfg.title || tp.config.title }); }
+  /** Merge over the defaults so templates saved before a field existed
+   *  (e.g. phoneFrame, twoColumns, sizeKey) don't leave it undefined. */
+  function applyTpl(tp: BookTemplate) {
+    const title = cfg.title || tp.config.title;
+    setCfg({ ...defaultBookConfig(title), ...tp.config, title });
+  }
   function delTpl(name: string) { setTpls(deleteTemplate(name)); }
 
   const toggle = (key: keyof BookConfig, label: string) => (
     <label className="bk-toggle">
       <input type="checkbox" checked={cfg[key] as boolean} onChange={(e) => set({ [key]: e.target.checked } as Partial<BookConfig>)} />
+      <span>{label}</span>
+    </label>
+  );
+
+  /** Phone frame and two columns can't both apply — a phone is a single column.
+   *  Turning one on switches the other off, so neither silently does nothing. */
+  const exclusiveToggle = (key: 'phoneFrame' | 'twoColumns', other: 'phoneFrame' | 'twoColumns', label: string) => (
+    <label className="bk-toggle">
+      <input type="checkbox" checked={cfg[key]}
+        onChange={(e) => set(e.target.checked
+          ? ({ [key]: true, [other]: false } as unknown as Partial<BookConfig>)
+          : ({ [key]: false } as unknown as Partial<BookConfig>))} />
       <span>{label}</span>
     </label>
   );
@@ -219,8 +236,8 @@ export default function BookModal(p: Props) {
 
             <div className="bk-sec">{t('bkInclude')}</div>
             <div className="bk-toggles">
-              {toggle('phoneFrame', t('bkPhoneFrame'))}
-              {toggle('twoColumns', t('bkTwoCol'))}
+              {exclusiveToggle('phoneFrame', 'twoColumns', t('bkPhoneFrame'))}
+              {exclusiveToggle('twoColumns', 'phoneFrame', t('bkTwoCol'))}
               {toggle('serif', t('bkSerif'))}
               {toggle('showWallpaper', t('bkWallpaper'))}
               {toggle('showCover', t('bkCoverPage'))}
