@@ -141,7 +141,7 @@ export async function saveChat(
 
 export async function listChats(): Promise<ChatRow[]> {
   const { data, error } = await sb.from('user_chats')
-    .select('id,title,contact_title,created_at,msg_count,media_count,category')
+    .select('id,title,contact_title,created_at,msg_count,media_count,category,avatar')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data || []) as ChatRow[];

@@ -27,6 +27,8 @@ import ResetPasswordModal from './components/ResetPasswordModal';
 import { saveChat, onAuthChange, getSharedChat, onPasswordRecovery } from './lib/supabase';
 import { exportChat } from './lib/exporter';
 import { exportBook } from './lib/bookExporter';
+import BookModal from './components/BookModal';
+import type { BookConfig } from './lib/bookThemes';
 import type { ChatRow } from './lib/supabase';
 import { useLang } from './lib/i18n';
 
@@ -80,6 +82,8 @@ export default function App() {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
+  const [bookOpen, setBookOpen] = useState(false);
+  const [bookExporting, setBookExporting] = useState(false);
   const [sharedLoading, setSharedLoading] = useState(!!new URLSearchParams(location.search).get('c'));
   const [toastMsg, setToastMsg] = useState('');
   const [session, setSession] = useState<Session | null>(null);
@@ -368,12 +372,15 @@ export default function App() {
     catch (e) { toast('❌ ' + ((e as Error).message || e), 4000); }
   }
 
-  async function onExportBook() {
+  async function doExportBook(config: BookConfig) {
+    setBookExporting(true);
     toast(t('tBook'), 0);
     try {
-      await exportBook({ title: contactTitle, meName, senders, dateOrder, messages, mediaMap, msgCount: stats.total, avatar });
+      await exportBook({ title: contactTitle, meName, senders, dateOrder, messages, mediaMap, msgCount: stats.total, avatar, wallpaper }, config);
       toast(t('tBookDone'), 2500);
+      setBookOpen(false);
     } catch (e) { toast('❌ ' + ((e as Error).message || e), 4000); }
+    finally { setBookExporting(false); }
   }
 
   async function translateWholeChat(from: FromLang, to: Lang2) {
@@ -531,7 +538,7 @@ export default function App() {
               onTranslate: () => setTranslateOpen(true),
               onExportImg: () => onExport('png'),
               onExportPdf: () => onExport('pdf'),
-              onExportBook,
+              onExportBook: () => setBookOpen(true),
               onSave, saving,
               onTheme: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')),
               onFrame: () => setShowFrame((f) => !f), showFrame,
@@ -553,6 +560,9 @@ export default function App() {
       <TranslateModal open={translateOpen} onClose={() => setTranslateOpen(false)}
         onTranslateChat={translateWholeChat} translating={translating} translated={translated} />
       <SaveModal open={saveOpen} onClose={() => setSaveOpen(false)} onSave={doSave} saving={saving} />
+      <BookModal open={bookOpen} onClose={() => setBookOpen(false)} onExport={doExportBook} exporting={bookExporting}
+        defaultTitle={contactTitle} avatar={avatar} meName={meName} senders={senders}
+        msgCount={stats.total} days={stats.days} mediaCount={stats.mediaCount} />
       <ResetPasswordModal open={recovery} onDone={() => setRecovery(false)} toast={toast} />
       <div className={'toast' + (toastMsg ? ' show' : '')}>{toastMsg}</div>
     </>

@@ -3,6 +3,7 @@ import { listChats, getChat, renameChat, deleteChat, shareChat, updateCategory }
 import type { ChatRow } from '../lib/supabase';
 import { CATEGORY_PRESETS, catEmoji } from '../lib/categories';
 import { useLang } from '../lib/i18n';
+import ShareModal from './ShareModal';
 
 interface Props {
   open: boolean;
@@ -18,6 +19,7 @@ export default function HistoryModal({ open, onClose, onOpenChat, toast }: Props
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState('');
   const [openingId, setOpeningId] = useState('');
+  const [share, setShare] = useState<{ url: string; title: string; avatar?: string | null } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -41,12 +43,12 @@ export default function HistoryModal({ open, onClose, onOpenChat, toast }: Props
     try { await renameChat(id, nm); toast(t('hRenamed'), 1800); refresh(); }
     catch (e) { toast('❌ ' + ((e as Error).message || e), 3000); }
   }
-  async function doShare(id: string) {
+  async function doShare(r: ChatRow) {
     toast(t('hShareCreating'), 0);
     try {
-      const url = await shareChat(id);
-      try { await navigator.clipboard.writeText(url); toast(t('hShareCopied'), 5000); }
-      catch { prompt(t('hSharePrompt'), url); toast('', 1); }
+      const url = await shareChat(r.id);
+      toast('', 1);
+      setShare({ url, title: r.contact_title || r.title || 'Chat', avatar: r.avatar });
     } catch (e) { toast('❌ ' + ((e as Error).message || e), 3500); }
   }
   async function doDelete(id: string, title: string) {
@@ -65,6 +67,7 @@ export default function HistoryModal({ open, onClose, onOpenChat, toast }: Props
   const cats = Array.from(new Set((rows || []).map((r) => r.category).filter(Boolean))) as string[];
 
   return (
+    <>
     <div className={'hist' + (open ? ' show' : '')} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="hist-box">
         <span className="x" onClick={onClose}>&times;</span>
@@ -115,7 +118,7 @@ export default function HistoryModal({ open, onClose, onOpenChat, toast }: Props
                   {openingId === r.id && <span className="spinner sm" style={{ marginRight: 8 }} />}
                   <div className="hi-actions">
                     <button className="hi-btn" title={t('hCategory')} onClick={() => doCategory(r.id, r.category || '')}>🏷️</button>
-                    <button className="hi-btn" title={t('hShare')} onClick={() => doShare(r.id)}>🔗</button>
+                    <button className="hi-btn" title={t('hShare')} onClick={() => doShare(r)}>🔗</button>
                     <button className="hi-btn hi-rename" title={t('hRename')} onClick={() => doRename(r.id, title)}>✏️</button>
                     <button className="hi-btn hi-del" title={t('hDelete')} onClick={() => doDelete(r.id, title)}>🗑️</button>
                   </div>
@@ -127,5 +130,8 @@ export default function HistoryModal({ open, onClose, onOpenChat, toast }: Props
         )}
       </div>
     </div>
+    <ShareModal open={!!share} url={share?.url || ''} title={share?.title || ''} avatar={share?.avatar}
+      onClose={() => setShare(null)} toast={toast} />
+    </>
   );
 }
