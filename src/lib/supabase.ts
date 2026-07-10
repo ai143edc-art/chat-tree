@@ -34,6 +34,7 @@ export interface ChatRow {
   avatar?: string | null;
   share_token?: string | null;
   shared_media?: Record<string, string>;
+  share_expires_at?: string | null;   // null = never expires
   category?: string | null;
   created_at?: string;
 }
@@ -182,8 +183,15 @@ export async function updateCategory(id: string, category: string | null): Promi
   const { error } = await sb.from('user_chats').update({ category }).eq('id', id);
   if (error) throw error;
 }
-/** Make a chat shareable: mint long-lived signed URLs for its media + a token. Returns the share URL. */
-export async function shareChat(id: string): Promise<string> {
+export interface ShareResult { url: string; expiresAt: string | null }
+
+/**
+ * Make a chat shareable. `ttlSeconds` sets how long the link stays valid
+ * (0 = never expires). Media signed URLs are minted for the same window, so
+ * photos die with the link. Re-calling with a different TTL keeps the same
+ * token — the link doesn't change, only its expiry does.
+ */
+export async function shareChat(id: string, ttlSeconds = 0): Promise<ShareResult> {
   const { data, error } = await sb.from('user_chats').select('media_map, share_token').eq('id', id).single();
   if (error) throw error;
   const row = data as ChatRow;
@@ -194,20 +202,24 @@ export async function shareChat(id: string): Promise<string> {
     if (/^https?:\/\//i.test(val)) sharedMedia[fname] = val;
     else toSign.push({ fname, path: val });
   }
+  const YEAR = 60 * 60 * 24 * 365;
+  const mediaTtl = ttlSeconds > 0 ? Math.max(ttlSeconds, 60) : YEAR;
   if (toSign.length) {
-    const YEAR = 60 * 60 * 24 * 365;
     const { data: signed, error: e2 } = await sb.storage.from('user-media')
-      .createSignedUrls(toSign.map((t) => t.path), YEAR);
+      .createSignedUrls(toSign.map((t) => t.path), mediaTtl);
     if (e2) throw e2;
     (signed || []).forEach((s, i) => { if (s.signedUrl && !s.error) sharedMedia[toSign[i].fname] = s.signedUrl; });
   }
   const token = row.share_token || uuidv4();
-  const { error: e3 } = await sb.from('user_chats').update({ share_token: token, shared_media: sharedMedia }).eq('id', id);
+  const expiresAt = ttlSeconds > 0 ? new Date(Date.now() + ttlSeconds * 1000).toISOString() : null;
+  const { error: e3 } = await sb.from('user_chats')
+    .update({ share_token: token, shared_media: sharedMedia, share_expires_at: expiresAt }).eq('id', id);
   if (e3) throw e3;
-  return `${location.origin}/?c=${token}`;
+  return { url: `${location.origin}/?c=${token}`, expiresAt };
 }
 export async function unshareChat(id: string): Promise<void> {
-  const { error } = await sb.from('user_chats').update({ share_token: null, shared_media: null }).eq('id', id);
+  const { error } = await sb.from('user_chats')
+    .update({ share_token: null, shared_media: null, share_expires_at: null }).eq('id', id);
   if (error) throw error;
 }
 export async function getSharedChat(token: string): Promise<ChatRow | null> {

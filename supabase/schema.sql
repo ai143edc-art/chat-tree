@@ -30,12 +30,14 @@ create table if not exists public.user_chats (
   avatar        text,
   share_token   uuid,
   shared_media  jsonb,
+  share_expires_at timestamptz,   -- null = the share link never expires
   category      text,
   created_at    timestamptz not null default now()
 );
 
--- For projects created before the category feature: add the column if missing.
+-- For projects created before these features: add the columns if missing.
 alter table public.user_chats add column if not exists category text;
+alter table public.user_chats add column if not exists share_expires_at timestamptz;
 
 create index if not exists user_chats_user_id_idx     on public.user_chats (user_id);
 create index if not exists user_chats_share_token_idx on public.user_chats (share_token);
@@ -97,8 +99,9 @@ revoke all on function public.delete_own_account() from public, anon;
 grant execute on function public.delete_own_account() to authenticated;
 
 -- ---------- RPC: read a chat by its public share token ---------------------
---  Only exposes rows that were explicitly shared (share_token set) and never
---  leaks user_id, share_token, or private media paths.
+--  Only exposes rows that were explicitly shared (share_token set), and only
+--  while the share is still valid (share_expires_at null = never expires).
+--  Never leaks user_id, share_token, or private media paths.
 create or replace function public.get_shared_chat(token uuid)
 returns table (
   title text, contact_title text, me_name text, model text, theme text,
@@ -114,7 +117,8 @@ begin
     select c.title, c.contact_title, c.me_name, c.model, c.theme,
            c.chat_text, c.shared_media, c.avatar, c.created_at
     from public.user_chats c
-    where c.share_token = token;
+    where c.share_token = token
+      and (c.share_expires_at is null or c.share_expires_at > now());
 end $$;
 
 grant execute on function public.get_shared_chat(uuid) to anon, authenticated;

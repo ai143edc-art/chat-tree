@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { listChats, getChat, renameChat, deleteChat, shareChat, updateCategory } from '../lib/supabase';
+import { listChats, getChat, renameChat, deleteChat, updateCategory } from '../lib/supabase';
 import type { ChatRow } from '../lib/supabase';
 import { CATEGORY_PRESETS, catEmoji } from '../lib/categories';
 import { useLang } from '../lib/i18n';
@@ -19,7 +19,7 @@ export default function HistoryModal({ open, onClose, onOpenChat, toast }: Props
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState('');
   const [openingId, setOpeningId] = useState('');
-  const [share, setShare] = useState<{ url: string; title: string; avatar?: string | null } | null>(null);
+  const [share, setShare] = useState<{ id: string; title: string; avatar?: string | null } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -43,13 +43,8 @@ export default function HistoryModal({ open, onClose, onOpenChat, toast }: Props
     try { await renameChat(id, nm); toast(t('hRenamed'), 1800); refresh(); }
     catch (e) { toast('❌ ' + ((e as Error).message || e), 3000); }
   }
-  async function doShare(r: ChatRow) {
-    toast(t('hShareCreating'), 0);
-    try {
-      const url = await shareChat(r.id);
-      toast('', 1);
-      setShare({ url, title: r.contact_title || r.title || 'Chat', avatar: r.avatar });
-    } catch (e) { toast('❌ ' + ((e as Error).message || e), 3500); }
+  function doShare(r: ChatRow) {
+    setShare({ id: r.id, title: r.contact_title || r.title || 'Chat', avatar: r.avatar });
   }
   async function doDelete(id: string, title: string) {
     if (!confirm(t('hDeleteConfirm').replace('{x}', title))) return;
@@ -130,7 +125,7 @@ export default function HistoryModal({ open, onClose, onOpenChat, toast }: Props
         )}
       </div>
     </div>
-    <ShareModal open={!!share} url={share?.url || ''} title={share?.title || ''} avatar={share?.avatar}
+    <ShareModal open={!!share} chatId={share?.id || ''} title={share?.title || ''} avatar={share?.avatar}
       onClose={() => setShare(null)} toast={toast} />
     </>
   );
