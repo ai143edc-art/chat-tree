@@ -2,6 +2,7 @@ import type { Stats } from '../lib/stats';
 import type { DateOrder } from '../lib/parser';
 import { formatDay } from '../lib/parser';
 import { useLang } from '../lib/i18n';
+import { useModal, dialogProps } from '../lib/useModal';
 
 interface Props {
   open: boolean;
@@ -12,10 +13,11 @@ interface Props {
 }
 
 export default function StatsModal({ open, onClose, stats, dateOrder, title }: Props) {
+  useModal(open, onClose);
   const { t } = useLang();
   return (
     <div className={'hist' + (open ? ' show' : '')} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="hist-box">
+      <div className="hist-box" {...dialogProps} aria-label="Chat statistics">
         <span className="x" onClick={onClose}>&times;</span>
         <h3>📊 {title} · {t('sStats')}</h3>
         {!stats ? <p className="hist-sub">{t('sNoData')}</p> : (

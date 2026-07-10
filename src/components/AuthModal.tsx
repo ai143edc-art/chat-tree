@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { signIn, signUp, signInWithGoogle, resetPassword } from '../lib/supabase';
 import Turnstile, { captchaEnabled } from './Turnstile';
+import { useModal, dialogProps } from '../lib/useModal';
 import { useLang } from '../lib/i18n';
 import LangToggle from './LangToggle';
 
@@ -23,6 +24,8 @@ export default function AuthModal({ open, onClose, toast }: Props) {
   const [captcha, setCaptcha] = useState('');
 
   function close() { setEmail(''); setPw(''); setErr(''); setOk(false); setBusy(false); setCaptcha(''); setMode('in'); onClose(); }
+  // Escape must not abandon a sign-in that is already in flight.
+  useModal(open, close, !busy);
   function go(next: 'in' | 'up' | 'reset') { setMode(next); setErr(''); setOk(false); }
   const keyActivate = (fn: () => void) => (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); }
@@ -82,7 +85,7 @@ export default function AuthModal({ open, onClose, toast }: Props) {
   const reset = mode === 'reset';
   return (
     <div className={'auth-overlay' + (open ? ' show' : '')} onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
-      <div className="auth-card">
+      <div className="auth-card" {...dialogProps} aria-label="Account">
         <span className="auth-x" onClick={close}>&times;</span>
         <div className="auth-top"><LangToggle /></div>
         <div className="auth-logo">💬</div>

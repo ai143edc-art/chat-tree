@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import * as P from '../lib/parser';
 import type { Message } from '../lib/parser';
 import { useLang } from '../lib/i18n';
+import { useModal, dialogProps } from '../lib/useModal';
 
 interface Item { url: string; kind: 'img' | 'video'; name: string }
 
@@ -15,6 +16,7 @@ interface Props {
 
 /** A dedicated grid of every photo & video in the chat. Click to open in the lightbox. */
 export default function GalleryModal({ open, onClose, messages, mediaMap, onOpen }: Props) {
+  useModal(open, onClose);
   const { t } = useLang();
   const [tab, setTab] = useState<'all' | 'img' | 'video'>('all');
 
@@ -42,7 +44,7 @@ export default function GalleryModal({ open, onClose, messages, mediaMap, onOpen
 
   return (
     <div className={'gal' + (open ? ' show' : '')} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="gal-box">
+      <div className="gal-box" {...dialogProps} aria-label="Media gallery">
         <span className="x" onClick={onClose}>&times;</span>
         <h3>{t('gTitle')}</h3>
         <div className="gal-tabs">

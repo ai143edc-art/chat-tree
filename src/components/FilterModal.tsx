@@ -1,6 +1,7 @@
 import * as P from '../lib/parser';
 import type { DateOrder } from '../lib/parser';
 import { useLang } from '../lib/i18n';
+import { useModal, dialogProps } from '../lib/useModal';
 
 export interface ChatFilter { sender: string; from: string; to: string; mediaOnly: boolean }
 export const EMPTY_FILTER: ChatFilter = { sender: '', from: '', to: '', mediaOnly: false };
@@ -20,13 +21,14 @@ interface Props {
 
 /** Filter the chat view by sender, date range, or media-only — without altering the data. */
 export default function FilterModal({ open, onClose, senders, dates, dateOrder, value, onChange, onClear, visibleCount, totalCount }: Props) {
+  useModal(open, onClose);
   const { t } = useLang();
   const set = (patch: Partial<ChatFilter>) => onChange({ ...value, ...patch });
   const label = (d: string) => P.formatDay(d, dateOrder);
 
   return (
     <div className={'hist' + (open ? ' show' : '')} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="hist-box flt-box">
+      <div className="hist-box flt-box" {...dialogProps} aria-label="Filter messages">
         <span className="x" onClick={onClose}>&times;</span>
         <h3>{t('fTitle')}</h3>
 

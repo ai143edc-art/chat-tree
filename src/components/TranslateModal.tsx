@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { translateText } from '../lib/translate';
 import type { FromLang, Lang2 } from '../lib/translate';
 import { useLang } from '../lib/i18n';
+import { useModal, dialogProps } from '../lib/useModal';
 
 interface Props {
   open: boolean;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function TranslateModal({ open, onClose, onTranslateChat, translating, translated }: Props) {
+  useModal(open, onClose, !translating);
   const { t } = useLang();
   const [from, setFrom] = useState<FromLang>('auto');
   const [to, setTo] = useState<Lang2>('en');
@@ -36,7 +38,7 @@ export default function TranslateModal({ open, onClose, onTranslateChat, transla
 
   return (
     <div className={'hist' + (open ? ' show' : '')} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="hist-box tr-box">
+      <div className="hist-box tr-box" {...dialogProps} aria-label="Translate chat">
         <span className="x" onClick={onClose}>&times;</span>
         <h3>{t('trTitle')}</h3>
 

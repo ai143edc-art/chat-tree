@@ -48,6 +48,16 @@ export default function App() {
   const [rawText, setRawText] = useState('');
   const [mediaMap, setMediaMap] = useState<Record<string, string>>({});
   const [mediaBlobs, setMediaBlobs] = useState<Record<string, Blob>>({});
+  // A blob: URL pins its Blob in memory until it is revoked. Open a 400-photo
+  // chat, then open another, and the first chat's photos never leave the tab.
+  // Signed Supabase URLs are http(s) and own nothing, so they are left alone.
+  const liveBlobUrls = useRef<string[]>([]);
+  useEffect(() => {
+    const next = Object.values(mediaMap).filter((u) => u.startsWith('blob:'));
+    for (const url of liveBlobUrls.current) if (!next.includes(url)) URL.revokeObjectURL(url);
+    liveBlobUrls.current = next;
+  }, [mediaMap]);
+  useEffect(() => () => { for (const url of liveBlobUrls.current) URL.revokeObjectURL(url); }, []);
   const [messages, setMessages] = useState<P.Message[]>([]);
   const [senders, setSenders] = useState<string[]>([]);
   const [meName, setMeName] = useState<string | null>(null);

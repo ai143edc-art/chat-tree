@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { changePassword, deleteAccount, signOut } from '../lib/supabase';
 import { useLang } from '../lib/i18n';
+import { useModal, dialogProps } from '../lib/useModal';
 
 interface Props {
   open: boolean;
@@ -13,6 +14,7 @@ export default function AccountModal({ open, onClose, email, toast }: Props) {
   const { t } = useLang();
   const [pw, setPw] = useState('');
   const [busy, setBusy] = useState(false);
+  useModal(open, onClose, !busy);
   const [err, setErr] = useState('');
 
   async function doChangePw() {
@@ -34,7 +36,7 @@ export default function AccountModal({ open, onClose, email, toast }: Props) {
 
   return (
     <div className={'hist' + (open ? ' show' : '')} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="hist-box">
+      <div className="hist-box" {...dialogProps} aria-label="Account">
         <span className="x" onClick={onClose}>&times;</span>
         <h3>{t('acTitle')}</h3>
         <p className="hist-sub">{t('acSignedAs')} <b>{email}</b></p>

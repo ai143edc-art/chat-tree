@@ -4,6 +4,7 @@ import * as P from '../lib/parser';
 import { shareChat } from '../lib/supabase';
 import { useLang } from '../lib/i18n';
 import type { TKey } from '../lib/i18n';
+import { useModal, dialogProps } from '../lib/useModal';
 
 interface Props {
   open: boolean;
@@ -94,10 +95,11 @@ export default function ShareModal({ open, chatId, title, avatar, onClose, toast
   const ttlLabel = t((TTLS.find((x) => x.seconds === ttl) || TTLS[0]).label);
   const expiryLine = ttl === 0 ? t('shareNeverExpires') : `${t('shareExpiresIn')} ${ttlLabel}`;
   const locked = busy || creating;
+  useModal(open, onClose, !locked);
 
   return (
     <div className={'hist' + (open ? ' show' : '')} onClick={(e) => { if (e.target === e.currentTarget && !locked) onClose(); }}>
-      <div className="hist-box sh-box">
+      <div className="hist-box sh-box" {...dialogProps} aria-label="Share chat">
         <span className="x" onClick={() => !locked && onClose()}>&times;</span>
         <h3>🔗 {t('shareTitle')}</h3>
 

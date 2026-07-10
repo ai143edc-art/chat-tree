@@ -4,6 +4,7 @@ import type { ChatRow } from '../lib/supabase';
 import { CATEGORY_PRESETS, catEmoji } from '../lib/categories';
 import { useLang } from '../lib/i18n';
 import ShareModal from './ShareModal';
+import { useModal, dialogProps } from '../lib/useModal';
 
 interface Props {
   open: boolean;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function HistoryModal({ open, onClose, onOpenChat, toast }: Props) {
+  useModal(open, onClose);
   const { t } = useLang();
   const [rows, setRows] = useState<ChatRow[] | null>(null);
   const [err, setErr] = useState('');
@@ -64,7 +66,7 @@ export default function HistoryModal({ open, onClose, onOpenChat, toast }: Props
   return (
     <>
     <div className={'hist' + (open ? ' show' : '')} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="hist-box">
+      <div className="hist-box" {...dialogProps} aria-label="Saved chats">
         <span className="x" onClick={onClose}>&times;</span>
         <h3>{t('hTitle')}</h3>
         {err && <div className="hist-err">{err}</div>}

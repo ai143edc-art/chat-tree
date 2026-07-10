@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CATEGORY_PRESETS, catEmoji } from '../lib/categories';
 import { useLang } from '../lib/i18n';
+import { useModal, dialogProps } from '../lib/useModal';
 
 interface Props {
   open: boolean;
@@ -18,11 +19,12 @@ export default function SaveModal({ open, onClose, onSave, saving }: Props) {
 
   function reset() { setSel(''); setCustom(''); }
   function close() { if (!saving) { reset(); onClose(); } }
+  useModal(open, close, !saving);
   function save() { onSave(chosen || null); reset(); }
 
   return (
     <div className={'hist' + (open ? ' show' : '')} onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
-      <div className="hist-box sv-box">
+      <div className="hist-box sv-box" {...dialogProps} aria-label="Save chat">
         <span className="x" onClick={close}>&times;</span>
         <h3>{t('svTitle')}</h3>
         <p className="sv-sub">{t('svSub')}</p>

@@ -7,6 +7,7 @@ import {
   loadTemplates, saveTemplate, deleteTemplate,
 } from '../lib/bookThemes';
 import type { BookConfig, BookTemplate } from '../lib/bookThemes';
+import { useModal, dialogProps } from '../lib/useModal';
 
 interface Props {
   open: boolean;
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export default function BookModal(p: Props) {
+  useModal(p.open, p.onClose, !p.exporting);
   const { t } = useLang();
   const [cfg, setCfg] = useState<BookConfig>(() => defaultBookConfig(p.defaultTitle));
   const [tpls, setTpls] = useState<BookTemplate[]>([]);
@@ -144,7 +146,7 @@ export default function BookModal(p: Props) {
 
   return (
     <div className={'hist' + (p.open ? ' show' : '')} onClick={(e) => { if (e.target === e.currentTarget && !p.exporting) p.onClose(); }}>
-      <div className="hist-box bk-box">
+      <div className="hist-box bk-box" {...dialogProps} aria-label="Book Studio">
         <span className="x" onClick={() => !p.exporting && p.onClose()}>&times;</span>
         <h3>📖 {t('bkTitle')}</h3>
 
