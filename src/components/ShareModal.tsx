@@ -24,9 +24,12 @@ export default function ShareModal({ open, url, title, avatar, onClose, toast }:
   useEffect(() => {
     if (!open || !url) { setQr(''); return; }
     let alive = true;
+    // Tuned so phone cameras lock on instantly: a full 4-module quiet zone
+    // (the QR spec's requirement), low EC so the modules stay large, near-black
+    // on white for maximum contrast, and a 3x source so the 240px render is crisp.
     QRCode.toDataURL(url, {
-      width: 560, margin: 1, errorCorrectionLevel: 'M',
-      color: { dark: '#0b3d36', light: '#ffffff' },
+      width: 720, margin: 4, errorCorrectionLevel: 'L',
+      color: { dark: '#111b21', light: '#ffffff' },
     })
       .then((d) => { if (alive) setQr(d); })
       .catch(() => { if (alive) setQr(''); });

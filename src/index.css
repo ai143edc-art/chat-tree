@@ -791,9 +791,9 @@ body{
 .sh-nm{text-align:left;line-height:1.3;min-width:0;}
 .sh-nm b{display:block;font-size:17px;color:#111b21;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;}
 .sh-nm span{font-size:11px;color:#8696a0;letter-spacing:.5px;text-transform:uppercase;}
-.sh-qr{width:198px;height:198px;margin:0 auto;background:#fff;border:1px solid #e6ebea;border-radius:14px;
-  display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;
-  box-shadow:0 2px 8px rgba(11,20,26,.06);}
+.sh-qr{width:240px;height:240px;margin:0 auto;background:#fff;border:1px solid #e6ebea;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;padding:0;box-sizing:border-box;
+  box-shadow:0 2px 8px rgba(11,20,26,.06);overflow:hidden;}
 .sh-qr img{width:100%;height:100%;display:block;}
 .sh-scan{margin-top:13px;font-size:13px;color:#54656f;}
 .sh-link{margin-top:7px;font-size:10.5px;color:#8696a0;word-break:break-all;padding:0 8px;}
