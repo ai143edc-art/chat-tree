@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import * as P from './lib/parser';
 import { MODELS } from './lib/models';
@@ -189,8 +189,13 @@ export default function App() {
 
   const visibleCount = messages.length - hiddenSet.size;
 
+  // The search box updates instantly, but recomputing matches and re-highlighting
+  // the list over thousands of messages is heavy. Deferring the query lets React
+  // keep the input responsive and update the results at a lower priority, so
+  // typing never stutters on a big chat.
+  const deferredSearch = useDeferredValue(search);
   const matchIndices = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = deferredSearch.trim().toLowerCase();
     if (!q) return [] as number[];
     const out: number[] = [];
     messages.forEach((m, i) => {
@@ -198,8 +203,8 @@ export default function App() {
       if (!m.system && m.sender && P.stripMarks(m.text).toLowerCase().includes(q)) out.push(i);
     });
     return out;
-  }, [search, messages, hiddenSet]);
-  useEffect(() => { setMatchPos(0); }, [search]);
+  }, [deferredSearch, messages, hiddenSet]);
+  useEffect(() => { setMatchPos(0); }, [deferredSearch]);
   const matchCount = matchIndices.length;
   const activeMsgIndex = matchCount ? matchIndices[Math.min(matchPos, matchCount - 1)] : -1;
   const matchSet = useMemo(() => new Set(matchIndices), [matchIndices]);

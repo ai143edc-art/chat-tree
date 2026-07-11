@@ -224,7 +224,7 @@ export function rowPropsEqual(a: RowProps, b: RowProps): boolean {
 
 const Row = memo(RowInner, rowPropsEqual);
 
-export default function MessageList({ messages, meName, senders, mediaMap, dateOrder, matchSet, hiddenSet, translations, translated, activeMsgIndex, editMode, onEditText, onDeleteMsg, onCycleTick, onEditTime, onEditDate, onReply, onReact, onForward, showTyping, onOpenMedia }: Props) {
+function MessageList({ messages, meName, senders, mediaMap, dateOrder, matchSet, hiddenSet, translations, translated, activeMsgIndex, editMode, onEditText, onDeleteMsg, onCycleTick, onEditTime, onEditDate, onReply, onReact, onForward, showTyping, onOpenMedia }: Props) {
   const isGroup = senders.length > 2;
   const nodes: ReactNode[] = [];
   let lastDate: string | null = null, prevSender: string | null = null, mi = -1;
@@ -296,3 +296,31 @@ export default function MessageList({ messages, meName, senders, mediaMap, dateO
   );
   return <>{nodes}</>;
 }
+
+/**
+ * Rebuilding the list means creating an element for all N messages and letting
+ * every row's memo decide whether to update — cheap per row, but not free at
+ * eight thousand. So the whole list is memoized too: a keystroke in the search
+ * box re-renders the phone chrome for the input, but the list only rebuilds when
+ * something it actually shows changes. Callbacks are excluded for the same
+ * reason as on the rows — they are index-keyed functional setState, so a stale
+ * reference is still correct, and comparing them (fresh each render) would make
+ * the memo never hold.
+ */
+function listPropsEqual(a: Props, b: Props): boolean {
+  return a.messages === b.messages
+    && a.meName === b.meName
+    && a.senders === b.senders
+    && a.mediaMap === b.mediaMap
+    && a.dateOrder === b.dateOrder
+    && a.matchSet === b.matchSet
+    && a.hiddenSet === b.hiddenSet
+    && a.translations === b.translations
+    && a.translated === b.translated
+    && a.activeMsgIndex === b.activeMsgIndex
+    && a.editMode === b.editMode
+    && a.showTyping === b.showTyping;
+}
+
+export default memo(MessageList, listPropsEqual);
+export { listPropsEqual };
