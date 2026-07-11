@@ -290,6 +290,7 @@ export default function BookModal(p: Props) {
               {toggle('showPageNumbers', t('bkPageNumbers'))}
               {toggle('showClosing', t('bkClosing'))}
             </div>
+            {!cfg.twoColumns && p.msgCount > 1500 && <p className="bk-hint">{t('bkBigChatHint')}</p>}
 
             <div className="bk-sec">{t('bkTemplates')}</div>
             <div className="bk-tpl-save">

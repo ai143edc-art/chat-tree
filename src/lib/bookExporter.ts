@@ -588,6 +588,9 @@ export async function exportBook(meta: BookMeta, config?: BookConfig, onProgress
     let drawn = 0;
     onProgress?.(0, totalPages);
 
+    // 2x keeps print sharp. Lowering it was measured to save under 10% because
+    // each page is bound by DOM work, not pixels — not worth softening photos —
+    // so the real speed-up for a long book is fewer pages (two columns).
     const addPage = async (el: HTMLElement) => {
       const c = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: th.paper, logging: false });
       if (pageAdded) pdf.addPage([sz.w, sz.h], sz.w > sz.h ? 'landscape' : 'portrait');

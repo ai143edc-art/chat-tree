@@ -152,6 +152,7 @@ const DICT = {
     bkDedication: 'Dedication', bkDedicationPh: 'e.g. For us. ❤️',
     bkSerif: 'Elegant serif', bkTitlePage: 'Title page', bkWallpaper: 'Chat wallpaper', bkSize: 'Page size',
     bkPhoneFrame: '📱 Phone frame', bkTwoCol: '2 columns / page', bkContents: 'Contents page',
+    bkBigChatHint: '💡 Big chat? Turn on “2 columns / page” — it roughly halves the pages, so the PDF builds much faster with no loss of quality.',
     bkBuilding: 'Page {a} of {b}', bkBuildWait: 'Keep this tab open while the book is drawn.',
     // ---- Keepsake section ----
     keepTitle: 'Made to be kept',
@@ -317,6 +318,7 @@ const DICT = {
     bkDedication: 'समर्पण', bkDedicationPh: 'जैसे: हमारे लिए ❤️',
     bkSerif: 'सुंदर serif फ़ॉन्ट', bkTitlePage: 'टाइटल पेज', bkWallpaper: 'चैट वॉलपेपर', bkSize: 'पेज साइज़',
     bkPhoneFrame: '📱 फ़ोन फ़्रेम', bkTwoCol: '2 कॉलम / पेज', bkContents: 'कंटेंट्स पेज',
+    bkBigChatHint: '💡 बड़ी चैट? “2 कॉलम / पेज” ऑन करें — पेज लगभग आधे हो जाते हैं, PDF बहुत तेज़ बनती है और क्वालिटी भी नहीं घटती।',
     bkBuilding: 'पेज {a} / {b}', bkBuildWait: 'किताब बनने तक यह टैब खुला रखें।',
     // ---- Keepsake section ----
     keepTitle: 'सँभालकर रखने के लिए',
