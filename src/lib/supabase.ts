@@ -114,6 +114,33 @@ export function onAuthChange(cb: (session: Session | null) => void): () => void 
 export interface SaveResult { failed: number; total: number }
 
 /**
+ * The content type to declare on upload, from the file's extension.
+ *
+ * This matters more than it looks: media pulled out of a WhatsApp .zip comes
+ * back from JSZip as a Blob with an empty `type`, and when no content type is
+ * given, supabase-js defaults it to `text/plain`. The user-media bucket only
+ * accepts image/video/audio/pdf, so a text/plain upload is rejected — which is
+ * exactly why saved chats were coming back with every photo missing. Naming the
+ * real type keeps the bucket happy without touching the file's bytes.
+ */
+const MIME_BY_EXT: Record<string, string> = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+  webp: 'image/webp', bmp: 'image/bmp', heic: 'image/heic',
+  mp4: 'video/mp4', '3gp': 'video/3gpp', mov: 'video/quicktime',
+  mkv: 'video/x-matroska', webm: 'video/webm', avi: 'video/x-msvideo',
+  opus: 'audio/ogg', mp3: 'audio/mpeg', aac: 'audio/aac', m4a: 'audio/mp4',
+  wav: 'audio/wav', ogg: 'audio/ogg', amr: 'audio/amr',
+  pdf: 'application/pdf',
+};
+function contentTypeFor(name: string, blobType: string): string {
+  // A concrete image/video/audio/pdf type from the blob is trusted as-is; a
+  // missing or generic one is replaced from the extension so it isn't dropped.
+  if (blobType && blobType !== 'application/octet-stream' && blobType !== 'text/plain') return blobType;
+  const ext = (name.match(/\.([a-z0-9]+)$/i) || [])[1]?.toLowerCase() || '';
+  return MIME_BY_EXT[ext] || blobType || 'application/octet-stream';
+}
+
+/**
  * Uploading the media used to be a `for` loop that awaited each file, so a chat
  * with a few hundred photos took minutes and any file that hit a transient
  * error was silently skipped — which is why some reopened chats came back with
@@ -139,8 +166,9 @@ export async function saveChat(
     const path = `${user.id}/${id}/${safe}`;
     // One retry: most failures at this scale are transient (a dropped request
     // in a burst), and a second attempt usually lands.
+    const contentType = contentTypeFor(fname, blob.type);
     for (let attempt = 0; attempt < 2; attempt++) {
-      const up = await sb.storage.from('user-media').upload(path, blob, { upsert: true, contentType: blob.type || undefined });
+      const up = await sb.storage.from('user-media').upload(path, blob, { upsert: true, contentType });
       if (!up.error) { cloudMap[fname] = path; break; }   // store the PATH; sign on load
       if (attempt === 1) { failed.push(fname); console.warn('media upload failed:', fname, up.error); }
     }
