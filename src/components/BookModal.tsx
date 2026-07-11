@@ -101,6 +101,9 @@ export default function BookModal(p: Props) {
     : { background: th.chatBg };
   // "9 July 2026  —  18 July 2026" → "July 2026", the chapter for the running head.
   const monthSample = (p.dateRange || '').split('—')[0].trim().split(/\s+/).slice(1).join(' ') || 'July 2026';
+  // A day pill inside that same month, so the sample page reads coherently with
+  // its running head instead of showing July under a January heading.
+  const daySample = `9 ${monthSample}`;
   const SAMPLE = [
     { out: false, txt: 'Kal milte hai? ☕' }, { out: true, txt: 'Haan pakka 👍' },
     { out: false, txt: '', media: true }, { out: true, txt: 'Perfect 🔥' },
@@ -212,12 +215,12 @@ export default function BookModal(p: Props) {
                 <div className={'bk-chatplate' + (cfg.showPageNumbers ? '' : ' nofolio')} style={plateBg}>
                   {cfg.twoColumns ? (
                     <div className="bk-cols">
-                      <div className="bk-col">{cfg.showChapters && <div className="bkm-day">July</div>}{SAMPLE.slice(0, 3).map(bubble)}</div>
+                      <div className="bk-col">{cfg.showChapters && <div className="bkm-day">{daySample}</div>}{SAMPLE.slice(0, 3).map(bubble)}</div>
                       <div className="bk-coldiv" />
                       <div className="bk-col">{SAMPLE.slice(3).map(bubble)}</div>
                     </div>
                   ) : (
-                    <div className="bk-single">{cfg.showChapters && <div className="bkm-day">9 July</div>}{SAMPLE.map(bubble)}</div>
+                    <div className="bk-single">{cfg.showChapters && <div className="bkm-day">{daySample}</div>}{SAMPLE.map(bubble)}</div>
                   )}
                 </div>
               )}
