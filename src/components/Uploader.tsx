@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import JSZip from 'jszip';
 import { useLang } from '../lib/i18n';
 import LangToggle from './LangToggle';
 
@@ -42,6 +41,9 @@ export default function Uploader({ onLoaded, onHistory, onBlank, onHome, userEma
         if (lower.endsWith('.zip')) {
           try {
             setBusy(t('busyZip'));
+            // ~95 KB — only a .zip upload needs it, so it stays out of the
+            // bundle every visitor downloads and loads on first use instead.
+            const { default: JSZip } = await import('jszip');
             const zip = await JSZip.loadAsync(f);
             const entries = Object.values(zip.files);
             const txtEntry = entries.find((e) => /(^|\/)_chat\.txt$/i.test(e.name))

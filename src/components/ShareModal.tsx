@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import QRCode from 'qrcode';
 import * as P from '../lib/parser';
 import { shareChat } from '../lib/supabase';
 import { useLang } from '../lib/i18n';
@@ -59,10 +58,12 @@ export default function ShareModal({ open, chatId, title, avatar, onClose, toast
     // Tuned so phone cameras lock on instantly: a full 4-module quiet zone
     // (the QR spec's requirement), low EC so the modules stay large, near-black
     // on white for maximum contrast, and a 3x source so the 240px render is crisp.
-    QRCode.toDataURL(url, {
-      width: 720, margin: 4, errorCorrectionLevel: 'L',
-      color: { dark: '#111b21', light: '#ffffff' },
-    })
+    // Loaded on demand — the encoder only matters once someone opens Share.
+    import('qrcode')
+      .then(({ default: QRCode }) => QRCode.toDataURL(url, {
+        width: 720, margin: 4, errorCorrectionLevel: 'L',
+        color: { dark: '#111b21', light: '#ffffff' },
+      }))
       .then((d) => { if (alive) setQr(d); })
       .catch(() => { if (alive) setQr(''); });
     return () => { alive = false; };
