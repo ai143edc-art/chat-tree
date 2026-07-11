@@ -33,11 +33,30 @@ html,body,#root{height:100%;}
 body{
   margin:0;
   font-family:'Segoe UI',Helvetica,Arial,sans-serif;
-  background:linear-gradient(135deg,#0a3d36 0%,#075e54 48%,#128c7e 100%);
+  /* A lit teal room rather than a flat fill: a deep base, two soft brand
+     glows and a warm one for depth, so the space the phone sits in reads as
+     designed instead of empty. All painted — no images. */
+  background:
+    radial-gradient(52rem 40rem at 82% -8%, rgba(37,211,102,.16), transparent 60%),
+    radial-gradient(46rem 38rem at 10% 4%, rgba(20,140,126,.20), transparent 62%),
+    radial-gradient(40rem 34rem at 50% 118%, rgba(214,199,154,.10), transparent 60%),
+    linear-gradient(135deg,#08322c 0%,#0a4a42 46%,#0c5f56 100%);
   background-attachment:fixed;
   color:var(--wa-txt);
   min-height:100vh;
 }
+/* A faint large-scale weave over the whole backdrop — barely there, just
+   enough that the field has texture close up. */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.6;
+  background-image:
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+  background-size:64px 64px;
+  -webkit-mask-image:radial-gradient(120% 80% at 50% 30%, #000, transparent 82%);
+  mask-image:radial-gradient(120% 80% at 50% 30%, #000, transparent 82%);
+}
+#root{position:relative;z-index:1;}
 
 /* ---------- Top toolbar ---------- */
 .toolbar{
@@ -146,8 +165,15 @@ body{
 .hint b{color:#333;}
 
 /* ---------- Phone frame ---------- */
-.stage{display:flex;flex-direction:column;align-items:center;padding:26px 12px 60px;}
+.stage{position:relative;display:flex;flex-direction:column;align-items:center;padding:34px 12px 64px;}
 .phoneWrap{position:relative;flex:0 0 auto;}
+/* the shadow the phone casts on the surface, so it reads as placed, not floating */
+.phoneWrap::after{
+  content:'';position:absolute;left:50%;bottom:-26px;transform:translateX(-50%);
+  width:74%;height:38px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(50% 50%, rgba(0,0,0,.42), transparent 72%);
+  filter:blur(9px);
+}
 .cap{margin-top:14px;color:#3b4a54;font-size:13px;font-weight:600;background:#fff;
   padding:6px 14px;border-radius:20px;box-shadow:0 1px 3px rgba(0,0,0,.15);}
 .cap span{color:#008069;}

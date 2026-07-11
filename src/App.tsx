@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import * as P from './lib/parser';
 import { MODELS } from './lib/models';
@@ -70,6 +70,12 @@ export default function App() {
   const [showFrame, setShowFrame] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  // Entering edit mode re-renders every row (each grows a toolbar and an
+  // editable field), which on a large chat is a heavy render. As a transition
+  // it runs in the background: the tab stays scrollable and the Edit button
+  // shows it is working, instead of the whole page freezing.
+  const [editPending, startEditTransition] = useTransition();
+  const toggleEditMode = () => startEditTransition(() => setEditMode((v) => !v));
   const [composeText, setComposeText] = useState('');
   const [composeSide, setComposeSide] = useState<'me' | 'other'>('me');
   const [replyTarget, setReplyTarget] = useState<{ sender: string; text: string } | null>(null);
@@ -529,7 +535,7 @@ export default function App() {
             showStatusBar={showStatusBar} onToggleStatusBar={() => setShowStatusBar((v) => !v)}
             showTyping={showTyping} onToggleTyping={() => setShowTyping((v) => !v)}
             settingsOpen={settingsOpen} onToggleSettings={() => setSettingsOpen((v) => !v)}
-            editMode={editMode} onEditMode={() => setEditMode((v) => !v)} onHome={() => setScreen('landing')}
+            editMode={editMode} onEditMode={toggleEditMode} editPending={editPending} onHome={() => setScreen('landing')}
             userEmail={userEmail} onLogin={() => setAuthOpen(true)} onAccount={() => setAccountOpen(true)}
             wallpaper={wallpaper} onWallpaper={setWallpaper}
             avatar={avatar} onAvatar={setAvatar}

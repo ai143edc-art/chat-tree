@@ -24,6 +24,7 @@ interface Props {
   onToggleSettings: () => void;
   editMode: boolean;
   onEditMode: () => void;
+  editPending?: boolean;
   onHome: () => void;
   userEmail: string | null;
   onLogin: () => void;
@@ -60,7 +61,9 @@ export default function Toolbar(p: Props) {
           ? <button className="collapse-btn" onClick={p.onAccount} title={p.userEmail}>👤 {p.userEmail.split('@')[0]}</button>
           : <button className="collapse-btn" onClick={p.onLogin}>{t('tbLogin')}</button>}
         <button className={'collapse-btn' + (p.settingsOpen ? ' on' : '')} onClick={p.onToggleSettings}>{t('tbSettings')}</button>
-        <button className={'collapse-btn' + (p.editMode ? ' on' : '')} onClick={p.onEditMode} title={t('tbEditHint')}>
+        <button className={'collapse-btn' + (p.editMode ? ' on' : '') + (p.editPending ? ' busy' : '')}
+          onClick={p.onEditMode} disabled={p.editPending} title={t('tbEditHint')}>
+          {p.editPending ? <span className="spinner btn" /> : null}
           {t('tbEdit')} {p.editMode ? t('on') : t('off')}
         </button>
       </div>
