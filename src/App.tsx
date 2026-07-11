@@ -455,14 +455,17 @@ export default function App() {
   async function doSave(category: string | null) {
     setSaving(true);
     try {
-      await saveChat(
+      const res = await saveChat(
         { contactTitle, meName, model: model.name, theme, rawText: JSON.stringify(messages),
           msgCount: stats.total, mediaCount: stats.mediaCount, avatar, category },
         mediaBlobs,
         (i, total) => toast(`${t('tUploading')} ${i} / ${total}…`, 0),
       );
       setSaveOpen(false);
-      toast(t('tSaved'), 2500);
+      // Don't claim a clean save if some photos didn't make it — the user can
+      // save again to retry just as easily as being misled.
+      if (res.failed > 0) toast(t('tSavedPartial').replace('{a}', String(res.failed)).replace('{b}', String(res.total)), 6000);
+      else toast(t('tSaved'), 2500);
     } catch (e) {
       console.error(e);
       toast(t('tSaveFail') + ' ' + ((e as Error).message || e), 4500);

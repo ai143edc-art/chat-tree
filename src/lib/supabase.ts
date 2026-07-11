@@ -111,25 +111,49 @@ export function onAuthChange(cb: (session: Session | null) => void): () => void 
 }
 
 /* ---------------- Per-user chats ---------------- */
+export interface SaveResult { failed: number; total: number }
+
+/**
+ * Uploading the media used to be a `for` loop that awaited each file, so a chat
+ * with a few hundred photos took minutes and any file that hit a transient
+ * error was silently skipped — which is why some reopened chats came back with
+ * missing images. Now the uploads run several at a time with a retry, and the
+ * blobs are sent untouched, so nothing is recompressed and quality is preserved.
+ */
 export async function saveChat(
   meta: SaveMeta,
   mediaBlobs: Record<string, Blob>,
   onProgress?: (done: number, total: number) => void,
-): Promise<void> {
+): Promise<SaveResult> {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) throw new Error('Please log in first.');
   const id = uuidv4();
   const files = Object.keys(mediaBlobs);
   const cloudMap: Record<string, string> = {};
-  for (let i = 0; i < files.length; i++) {
-    const fname = files[i], blob = mediaBlobs[fname];
-    onProgress?.(i + 1, files.length);
+  const failed: string[] = [];
+  let done = 0;
+
+  const uploadOne = async (fname: string): Promise<void> => {
+    const blob = mediaBlobs[fname];
     const safe = fname.replace(/[^a-z0-9._-]+/gi, '_');
     const path = `${user.id}/${id}/${safe}`;
-    const up = await sb.storage.from('user-media').upload(path, blob, { upsert: true, contentType: blob.type || undefined });
-    if (up.error) { console.warn('media upload failed:', fname, up.error); continue; }
-    cloudMap[fname] = path;   // store the storage PATH (private bucket → sign on load)
-  }
+    // One retry: most failures at this scale are transient (a dropped request
+    // in a burst), and a second attempt usually lands.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const up = await sb.storage.from('user-media').upload(path, blob, { upsert: true, contentType: blob.type || undefined });
+      if (!up.error) { cloudMap[fname] = path; break; }   // store the PATH; sign on load
+      if (attempt === 1) { failed.push(fname); console.warn('media upload failed:', fname, up.error); }
+    }
+    onProgress?.(++done, files.length);
+  };
+
+  // A small pool of workers pulling from the queue — fast, but bounded so we
+  // never open hundreds of sockets at once.
+  const CONCURRENCY = 6;
+  let next = 0;
+  const worker = async () => { while (next < files.length) await uploadOne(files[next++]); };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, files.length) }, worker));
+
   const row: ChatRow = {
     id, user_id: user.id, title: meta.contactTitle, contact_title: meta.contactTitle,
     me_name: meta.meName, model: meta.model, theme: meta.theme, chat_text: meta.rawText, media_map: cloudMap,
@@ -138,6 +162,7 @@ export async function saveChat(
   };
   const { error } = await sb.from('user_chats').insert(row);
   if (error) throw error;
+  return { failed: failed.length, total: files.length };
 }
 
 export async function listChats(): Promise<ChatRow[]> {
