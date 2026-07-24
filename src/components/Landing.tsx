@@ -229,6 +229,10 @@ export default function Landing({ onLaunch, onPrivacy, onTerms }: { onLaunch: ()
       <footer className="lp-foot">
         <div>💬 {BRAND}</div>
         <p className="lp-disc">{t('footerDisc')}</p>
+        {/* Real crawlable link to the static guide — internal linking + SEO. */}
+        <div className="lp-copy">
+          <a className="lp-link" href="/guides/how-to-make-a-fake-whatsapp-chat.html">{t('guideLink')}</a>
+        </div>
         <div className="lp-copy">
           © {new Date().getFullYear()} {BRAND}
           <span className="lp-sep"> · </span>

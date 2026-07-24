@@ -40,6 +40,7 @@ const DICT = {
     finalTitle: 'Ready to craft your chat?',
     finalCta: "🚀 Get started — it's free",
     footerDisc: 'Chat Tree is an independent tool and is not affiliated with, endorsed by, or connected to WhatsApp or Meta. “WhatsApp” is a trademark of Meta Platforms, Inc. Please use responsibly — do not create content to deceive or harm others.',
+    guideLink: '📖 How to make a fake WhatsApp chat',
     privacyLink: 'Privacy Policy',
     // ---- Auth ----
     welcomeBack: 'Welcome back', createAccount: 'Create your account',
@@ -206,6 +207,7 @@ const DICT = {
     finalTitle: 'अपनी चैट बनाने के लिए तैयार?',
     finalCta: '🚀 शुरू करें — बिल्कुल मुफ़्त',
     footerDisc: 'Chat Tree एक स्वतंत्र टूल है और WhatsApp या Meta से न जुड़ा है, न इनके द्वारा समर्थित है। “WhatsApp” Meta Platforms, Inc. का ट्रेडमार्क है। कृपया ज़िम्मेदारी से इस्तेमाल करें — किसी को धोखा देने या नुकसान पहुँचाने वाला कंटेंट न बनाएँ।',
+    guideLink: '📖 फ़ेक WhatsApp चैट कैसे बनाएँ',
     privacyLink: 'प्राइवेसी पॉलिसी',
     // ---- Auth ----
     welcomeBack: 'वापसी पर स्वागत है', createAccount: 'अपना अकाउंट बनाएँ',
