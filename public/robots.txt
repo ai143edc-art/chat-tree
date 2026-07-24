@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://chat-tree-delta.vercel.app/sitemap.xml
+Sitemap: https://chattreeapp.fun/sitemap.xml
