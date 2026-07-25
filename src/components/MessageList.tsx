@@ -10,11 +10,9 @@ interface Props {
   senders: string[];
   mediaMap: Record<string, string>;
   dateOrder: P.DateOrder;
-  matchSet?: Set<number>;
   hiddenSet?: Set<number>;
   translations?: Record<number, string>;
   translated?: boolean;
-  activeMsgIndex?: number;
   editMode?: boolean;
   onEditText?: (index: number, text: string) => void;
   onDeleteMsg?: (index: number) => void;
@@ -106,8 +104,6 @@ export interface RowProps {
   out: boolean;
   grp: boolean;
   isGroup: boolean;
-  isMatch: boolean;
-  isActive: boolean;
   translation: string | null;
   mediaUrl: string | undefined;
   editMode?: boolean;
@@ -122,7 +118,7 @@ export interface RowProps {
 }
 
 function RowInner({
-  m, mi, out, grp, isGroup, isMatch, isActive, translation, mediaUrl, editMode,
+  m, mi, out, grp, isGroup, translation, mediaUrl, editMode,
   onEditText, onDeleteMsg, onCycleTick, onEditTime, onReply, onReact, onForward, onOpenMedia,
 }: RowProps) {
   const tr = translation;
@@ -169,9 +165,11 @@ function RowInner({
   const who = isGroup && !out && !grp
     ? <div className={'who ' + P.colorFor(m.sender!)}>{m.sender}</div> : null;
 
-  const hl = isMatch ? (isActive ? ' hl hla' : ' hl') : '';
+  // Search-match highlighting (.hl / .hla) is not rendered here on purpose: it
+  // is painted straight onto these rows by applyHighlights so a keystroke never
+  // has to rebuild the list. See applyHighlights below.
   return (
-    <div className={`row ${out ? 'out' : 'in'}${grp ? ' grp' : ''}${hl}${editMode ? ' editmode' : ''}`} data-mi={mi}>
+    <div className={`row ${out ? 'out' : 'in'}${grp ? ' grp' : ''}${editMode ? ' editmode' : ''}`} data-mi={mi}>
       {editMode && onDeleteMsg && (
         <RowTools onReply={() => onReply?.(idx)} onReact={(e) => onReact?.(idx, e)} onForward={() => onForward?.(idx)} onDelete={() => onDeleteMsg(idx)} />
       )}
@@ -215,8 +213,6 @@ export function rowPropsEqual(a: RowProps, b: RowProps): boolean {
     && a.out === b.out
     && a.grp === b.grp
     && a.isGroup === b.isGroup
-    && a.isMatch === b.isMatch
-    && a.isActive === b.isActive
     && a.translation === b.translation
     && a.mediaUrl === b.mediaUrl
     && a.editMode === b.editMode;
@@ -224,7 +220,7 @@ export function rowPropsEqual(a: RowProps, b: RowProps): boolean {
 
 const Row = memo(RowInner, rowPropsEqual);
 
-function MessageList({ messages, meName, senders, mediaMap, dateOrder, matchSet, hiddenSet, translations, translated, activeMsgIndex, editMode, onEditText, onDeleteMsg, onCycleTick, onEditTime, onEditDate, onReply, onReact, onForward, showTyping, onOpenMedia }: Props) {
+function MessageList({ messages, meName, senders, mediaMap, dateOrder, hiddenSet, translations, translated, editMode, onEditText, onDeleteMsg, onCycleTick, onEditTime, onEditDate, onReply, onReact, onForward, showTyping, onOpenMedia }: Props) {
   const isGroup = senders.length > 2;
   const nodes: ReactNode[] = [];
   let lastDate: string | null = null, prevSender: string | null = null, mi = -1;
@@ -263,8 +259,6 @@ function MessageList({ messages, meName, senders, mediaMap, dateOrder, matchSet,
         out={out}
         grp={grp}
         isGroup={isGroup}
-        isMatch={!!matchSet?.has(mi)}
-        isActive={mi === activeMsgIndex}
         translation={translated && translations && translations[mi] != null ? translations[mi] : null}
         mediaUrl={mediaUrl}
         editMode={editMode}
@@ -313,14 +307,37 @@ function listPropsEqual(a: Props, b: Props): boolean {
     && a.senders === b.senders
     && a.mediaMap === b.mediaMap
     && a.dateOrder === b.dateOrder
-    && a.matchSet === b.matchSet
     && a.hiddenSet === b.hiddenSet
     && a.translations === b.translations
     && a.translated === b.translated
-    && a.activeMsgIndex === b.activeMsgIndex
     && a.editMode === b.editMode
     && a.showTyping === b.showTyping;
 }
 
 export default memo(MessageList, listPropsEqual);
 export { listPropsEqual };
+
+/**
+ * Paints the search-match highlight straight onto the already-rendered rows,
+ * instead of it being part of each row's React output. This is the whole reason
+ * a keystroke no longer rebuilds the list: matches move by toggling two classes
+ * on the DOM rows the viewer already has, in one pass over `container`.
+ *
+ * It is idempotent and self-clearing — every message row is visited and its
+ * `.hl` / `.hla` set to exactly what the current match set says, so re-running
+ * with a new set (or an empty one, to clear) always leaves the right rows lit.
+ * Rows carry `data-mi`; the typing indicator has no `data-mi` and is skipped.
+ */
+export function applyHighlights(
+  container: HTMLElement | null,
+  matchSet: Set<number> | undefined,
+  activeIndex: number,
+): void {
+  if (!container) return;
+  container.querySelectorAll<HTMLElement>('.row[data-mi]').forEach((el) => {
+    const mi = Number(el.dataset.mi);
+    const on = !!matchSet && matchSet.has(mi);
+    el.classList.toggle('hl', on);
+    el.classList.toggle('hla', on && mi === activeIndex);
+  });
+}

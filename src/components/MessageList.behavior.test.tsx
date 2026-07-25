@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
-import MessageList, { rowPropsEqual } from './MessageList';
+import MessageList, { rowPropsEqual, applyHighlights } from './MessageList';
 import type { RowProps } from './MessageList';
 import type { Message } from '../lib/parser';
 
@@ -33,17 +33,29 @@ it('edited message text updates the row (new object bypasses memo)', () => {
   expect(container.querySelector('[data-mi="1"]')!.textContent).toContain('other');
 });
 
-it('moving the active search match moves the highlight', () => {
+it('applyHighlights paints matches onto the rows, moves the active one, and clears', () => {
   const msgs = [M({ text: 'photo a' }), M({ text: 'photo b' }), M({ text: 'photo c' })];
-  const matchSet = new Set([0, 2]);
-  const { container, rerender } = render(
-    <MessageList {...base} messages={msgs} matchSet={matchSet} activeMsgIndex={0} />,
-  );
+  const { container } = render(<MessageList {...base} messages={msgs} />);
+  // Rows render plain: highlighting is a DOM pass, not part of the list output —
+  // that is what keeps a search keystroke off the reconciler on a big chat.
+  expect(container.querySelector('[data-mi="0"]')!.className).not.toContain('hl');
+
+  applyHighlights(container as HTMLElement, new Set([0, 2]), 0);
+  expect(container.querySelector('[data-mi="0"]')!.className).toContain('hl');
   expect(container.querySelector('[data-mi="0"]')!.className).toContain('hla');
+  expect(container.querySelector('[data-mi="1"]')!.className).not.toContain('hl');
+  expect(container.querySelector('[data-mi="2"]')!.className).toContain('hl');
   expect(container.querySelector('[data-mi="2"]')!.className).not.toContain('hla');
-  rerender(<MessageList {...base} messages={msgs} matchSet={matchSet} activeMsgIndex={2} />);
+
+  // Moving the active match lights the new row and drops the old active class.
+  applyHighlights(container as HTMLElement, new Set([0, 2]), 2);
   expect(container.querySelector('[data-mi="0"]')!.className).not.toContain('hla');
   expect(container.querySelector('[data-mi="2"]')!.className).toContain('hla');
+
+  // An empty set clears every highlight.
+  applyHighlights(container as HTMLElement, undefined, -1);
+  expect(container.querySelector('[data-mi="0"]')!.className).not.toContain('hl');
+  expect(container.querySelector('[data-mi="2"]')!.className).not.toContain('hl');
 });
 
 it('toggling translation swaps the text and back', () => {
@@ -80,7 +92,7 @@ it('entering edit mode adds the delete tool to every row', () => {
 describe('memo contract: what makes a row re-render', () => {
   const props = (o: Partial<RowProps>): RowProps => ({
     m: M({ text: 'x' }), mi: 0, out: false, grp: false, isGroup: false,
-    isMatch: false, isActive: false, translation: null, mediaUrl: undefined,
+    translation: null, mediaUrl: undefined,
     editMode: false, onOpenMedia: () => {}, ...o,
   });
 
@@ -93,7 +105,7 @@ describe('memo contract: what makes a row re-render', () => {
   it('re-renders when any value the markup depends on changes', () => {
     const a = props({});
     for (const change of [
-      { isActive: true }, { isMatch: true }, { translation: 'x' }, { mediaUrl: 'blob:y' },
+      { translation: 'x' }, { mediaUrl: 'blob:y' },
       { editMode: true }, { out: true }, { grp: true }, { isGroup: true }, { mi: 1 },
       { m: M({ text: 'different' }) },
     ]) {

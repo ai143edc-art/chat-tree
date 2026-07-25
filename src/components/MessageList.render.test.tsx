@@ -69,15 +69,6 @@ const cases: Record<string, { messages: Message[]; senders: string[]; extra?: Re
       M({ sender: 'Riya', text: '<Media omitted>' }),
     ],
   },
-  'search match + active highlight': {
-    senders: twoParty,
-    extra: { matchSet: new Set([0, 2]), activeMsgIndex: 2 },
-    messages: [
-      M({ sender: 'Riya', text: 'photo please' }),
-      M({ sender: 'Vikku', text: 'sure' }),
-      M({ sender: 'Riya', text: 'the photo' }),
-    ],
-  },
   'filter hides the middle message': {
     senders: twoParty,
     extra: { hiddenSet: new Set([1]) },
