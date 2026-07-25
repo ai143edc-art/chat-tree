@@ -50,44 +50,7 @@
     ]
   }
   </script>
-
-  <style>
-    :root { --green:#128c7e; --green2:#25d366; --ink:#111b21; --sub:#54656f; --line:#e6ebe9; --bg:#f6faf8; }
-    * { box-sizing:border-box; }
-    body { margin:0; font-family:'Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif; color:var(--ink);
-      background:var(--bg); line-height:1.65; }
-    a { color:var(--green); }
-    .nav { display:flex; align-items:center; justify-content:space-between; padding:14px 20px;
-      background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; }
-    .nav .logo { font-weight:800; font-size:18px; color:var(--green); text-decoration:none; }
-    .nav .cta { background:linear-gradient(135deg,var(--green2),var(--green)); color:#fff; text-decoration:none;
-      padding:9px 18px; border-radius:22px; font-weight:700; font-size:14px; }
-    .wrap { max-width:760px; margin:0 auto; padding:32px 20px 64px; }
-    .crumb { font-size:13px; color:var(--sub); margin-bottom:18px; }
-    .crumb a { text-decoration:none; }
-    h1 { font-size:clamp(26px,4.5vw,36px); line-height:1.2; margin:0 0 10px; letter-spacing:-.4px; }
-    .lede { font-size:18px; color:var(--sub); margin:0 0 24px; }
-    h2 { font-size:22px; margin:34px 0 12px; }
-    h3 { font-size:17px; margin:22px 0 6px; }
-    ol.steps { counter-reset:s; list-style:none; padding:0; }
-    ol.steps > li { position:relative; padding:14px 16px 14px 56px; margin:12px 0; background:#fff;
-      border:1px solid var(--line); border-radius:14px; }
-    ol.steps > li::before { counter-increment:s; content:counter(s); position:absolute; left:14px; top:14px;
-      width:30px; height:30px; border-radius:50%; background:linear-gradient(140deg,var(--green2),var(--green));
-      color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; }
-    ol.steps b { display:block; margin-bottom:2px; }
-    .tips li { margin:6px 0; }
-    .note { background:#fff8e6; border:1px solid #f2e2b6; border-radius:12px; padding:14px 16px; font-size:14.5px; color:#6b5a2a; }
-    .cta-box { text-align:center; background:#fff; border:1px solid var(--line); border-radius:18px; padding:28px 20px; margin:30px 0; }
-    .cta-box a.btn { display:inline-block; background:linear-gradient(135deg,var(--green2),var(--green)); color:#fff;
-      text-decoration:none; padding:13px 30px; border-radius:26px; font-weight:800; font-size:16px;
-      box-shadow:0 10px 24px -8px rgba(18,140,126,.5); }
-    details { background:#fff; border:1px solid var(--line); border-radius:12px; padding:2px 16px; margin:10px 0; }
-    details summary { font-weight:700; cursor:pointer; padding:12px 0; }
-    details p { margin:0 0 12px; color:var(--sub); }
-    .foot { border-top:1px solid var(--line); margin-top:40px; padding-top:20px; font-size:13px; color:var(--sub); text-align:center; }
-    .foot a { text-decoration:none; }
-  </style>
+  <link rel="stylesheet" href="/guides/guides.css" />
 </head>
 <body>
   <nav class="nav">
@@ -96,7 +59,7 @@
   </nav>
 
   <main class="wrap">
-    <div class="crumb"><a href="https://www.chattreeapp.fun/">Home</a> › Guides › How to make a fake WhatsApp chat</div>
+    <div class="crumb"><a href="https://www.chattreeapp.fun/">Home</a> › <a href="/guides/">Guides</a> › How to make a fake WhatsApp chat</div>
 
     <h1>How to Make a Fake WhatsApp Chat (Free, Online)</h1>
     <p class="lede">Want a realistic WhatsApp-style conversation for a meme, a tutorial screenshot, a design mockup or just for fun? Here is the quick way to build one in your browser — with messages on both sides, photos, reactions and those blue ticks — and export it as an image or PDF. No app to install, and no sign-up to try it.</p>
@@ -137,15 +100,20 @@
       <b>A quick, honest note:</b> Chat Tree is for creative, educational and personal use. Please don’t use a generated chat to impersonate a real person, fake evidence, or deceive or harm anyone. That’s not what it’s for.
     </div>
 
-    <h2>Prefer to relive a real chat?</h2>
-    <p>Chat Tree isn’t only for made-up conversations. You can export a real chat from WhatsApp (a <code>.zip</code> or <code>_chat.txt</code>), upload it, and see it come back to life exactly as it looked — with the media, replies and reactions intact — then keep it as a PDF or a bound keepsake book. <a href="https://www.chattreeapp.fun/">Try it here.</a></p>
-
     <h2>FAQ</h2>
     <details><summary>Is it really free?</summary><p>Yes — you can build and export a chat for free in your browser, with no sign-up needed to try it.</p></details>
     <details><summary>Is my data private?</summary><p>Editing and viewing happen entirely in your browser. Nothing leaves your device unless you choose to save a chat to your account.</p></details>
     <details><summary>Can I add photos and blue ticks?</summary><p>Yes. You can insert photos, videos and documents, add replies and reactions, and set each outgoing message to sent, delivered or blue read ticks.</p></details>
     <details><summary>Does it work on a phone?</summary><p>Yes — it runs in any modern mobile or desktop browser, no download needed.</p></details>
     <details><summary>Is Chat Tree affiliated with WhatsApp?</summary><p>No. Chat Tree is an independent tool and is not affiliated with, endorsed by, or connected to WhatsApp or Meta. WhatsApp is a trademark of Meta Platforms, Inc.</p></details>
+
+    <div class="related">
+      <h2>More guides</h2>
+      <ul>
+        <li><a href="/guides/how-to-view-exported-whatsapp-chat.html">How to open &amp; view an exported WhatsApp chat</a><span>Turn that confusing .txt or .zip export back into a real-looking chat.</span></li>
+        <li><a href="/guides/save-whatsapp-chat-as-pdf-keepsake-book.html">Save a WhatsApp chat as a PDF or keepsake book</a><span>Keep a whole conversation as a printable book with a foil-stamped cover.</span></li>
+      </ul>
+    </div>
 
     <div class="cta-box">
       <p style="margin:0 0 14px;font-weight:600;">Ready to build yours?</p>
