@@ -577,6 +577,34 @@ export async function exportBook(meta: BookMeta, config?: BookConfig, onProgress
     });
     const wantContents = cfg.showContents && cfg.showPageNumbers && chapters.length > 1;
 
+    // Contents can run longer than one page. The old code drew every chapter into
+    // a single fixed-height, overflow-hidden page, so once it filled (~24 lines)
+    // the rest were clipped and simply never shown. Measure one real entry, then
+    // split the chapters across as many pages as they need so none are lost.
+    const tocLeader = `border-bottom:1px dotted ${rgba(INK, 0.3)};`;
+    const tocEntryHtml = ({ month, page: pg }: { month: string; page: number }) =>
+      '<div style="display:flex;align-items:baseline;gap:10px;margin:0 0 19px;">'
+      + `<span style="font-family:${headFont};font-size:16px;${cfg.serif ? 'font-style:italic;' : ''}white-space:nowrap;">${escHtml(month)}</span>`
+      + `<span style="flex:1;${tocLeader}transform:translateY(-4px);"></span>`
+      + `<span style="font-family:${headFont};font-size:14px;color:${rgba(INK, 0.62)};">${pg}</span>`
+      + '</div>';
+    const tocSlices: { month: string; page: number }[][] = [];
+    if (wantContents) {
+      const TOC_PAD = 118, TOC_HEADER_H = 110;   // padding each side; "Contents" title + rule (page 1 only)
+      // Measure a real entry (plus its 19px bottom margin) at the true content width.
+      const probe = document.createElement('div');
+      probe.style.cssText = `position:fixed;left:-10000px;top:0;width:${PAGE_W - 192}px;visibility:hidden;`;
+      probe.innerHTML = tocEntryHtml(chapters[0]);
+      document.body.appendChild(probe);
+      const entryH = ((probe.firstElementChild as HTMLElement)?.offsetHeight || 21) + 19;
+      probe.remove();
+      const avail = PAGE_H - TOC_PAD * 2;
+      const firstCap = Math.max(1, Math.floor((avail - TOC_HEADER_H) / entryH));
+      const contCap = Math.max(1, Math.floor(avail / entryH));
+      tocSlices.push(chapters.slice(0, firstCap));
+      for (let idx = firstCap; idx < chapters.length; idx += contCap) tocSlices.push(chapters.slice(idx, idx + contCap));
+    }
+
     const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
     const pdf = new jsPDF({ unit: 'mm', format: [sz.w, sz.h], orientation: sz.w > sz.h ? 'landscape' : 'portrait' });
@@ -584,7 +612,7 @@ export async function exportBook(meta: BookMeta, config?: BookConfig, onProgress
     let pageAdded = false;
 
     const totalPages = pages.length + (cfg.showCover ? 1 : 0) + (cfg.showTitlePage ? 1 : 0)
-      + (wantContents ? 1 : 0) + (cfg.showClosing ? 1 : 0);
+      + tocSlices.length + (cfg.showClosing ? 1 : 0);
     let drawn = 0;
     onProgress?.(0, totalPages);
 
@@ -605,21 +633,18 @@ export async function exportBook(meta: BookMeta, config?: BookConfig, onProgress
     if (cfg.showTitlePage) { book.appendChild(titlePage); await addPage(titlePage); titlePage.remove(); }
 
     // ---- Contents (front matter: no running head, no folio) ----
-    if (wantContents) {
+    // One page per slice; the "Contents" title + rule only heads the first page,
+    // the rest simply continue the list — so long chats no longer drop chapters.
+    for (let s = 0; s < tocSlices.length; s++) {
       const toc = document.createElement('div');
       toc.style.cssText = `position:relative;width:${PAGE_W}px;height:${PAGE_H}px;box-sizing:border-box;`
         + `overflow:hidden;background:${th.paper};color:${INK};padding:118px 96px;`;
-      const leader = `border-bottom:1px dotted ${rgba(INK, 0.3)};`;
-      toc.innerHTML =
-        `<div style="text-align:center;font-family:${headFont};font-size:26px;letter-spacing:${cfg.serif ? '1px' : '4px'};`
-        + `${cfg.serif ? '' : 'text-transform:uppercase;font-weight:700;'}">Contents</div>`
-        + `<div style="width:52px;height:1px;background:${th.accent};opacity:.5;margin:20px auto 42px;"></div>`
-        + chapters.map(({ month, page: pg }) =>
-          '<div style="display:flex;align-items:baseline;gap:10px;margin:0 0 19px;">'
-          + `<span style="font-family:${headFont};font-size:16px;${cfg.serif ? 'font-style:italic;' : ''}white-space:nowrap;">${escHtml(month)}</span>`
-          + `<span style="flex:1;${leader}transform:translateY(-4px);"></span>`
-          + `<span style="font-family:${headFont};font-size:14px;color:${rgba(INK, 0.62)};">${pg}</span>`
-          + '</div>').join('');
+      const header = s === 0
+        ? `<div style="text-align:center;font-family:${headFont};font-size:26px;letter-spacing:${cfg.serif ? '1px' : '4px'};`
+          + `${cfg.serif ? '' : 'text-transform:uppercase;font-weight:700;'}">Contents</div>`
+          + `<div style="width:52px;height:1px;background:${th.accent};opacity:.5;margin:20px auto 42px;"></div>`
+        : '';
+      toc.innerHTML = header + tocSlices[s].map(tocEntryHtml).join('');
       toc.appendChild(gutterEl(false));
       appendBorder(toc, cfg.borderKey, th);
       book.appendChild(toc);
