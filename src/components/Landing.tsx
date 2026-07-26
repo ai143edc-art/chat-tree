@@ -32,7 +32,7 @@ function Icon({ name }: { name: string }) {
 }
 
 export default function Landing({ onLaunch, onPrivacy, onTerms }: { onLaunch: () => void; onPrivacy: () => void; onTerms: () => void }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const stage = useRef<HTMLDivElement>(null);
   const keyActivate = (fn: () => void) => (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); }
@@ -229,9 +229,11 @@ export default function Landing({ onLaunch, onPrivacy, onTerms }: { onLaunch: ()
       <footer className="lp-foot">
         <div>💬 {BRAND}</div>
         <p className="lp-disc">{t('footerDisc')}</p>
-        {/* Real crawlable link to the static guide — internal linking + SEO. */}
+        {/* Real crawlable link to the static guides hub — internal linking + SEO.
+            Points to the Hindi hub when the app is in Hindi, English otherwise;
+            each hub then cross-links to the other via its EN/हिं toggle. */}
         <div className="lp-copy">
-          <a className="lp-link" href="/guides/">{t('guideLink')}</a>
+          <a className="lp-link" href={lang === 'hi' ? '/guides/hi/' : '/guides/'}>{t('guideLink')}</a>
         </div>
         <div className="lp-copy">
           © {new Date().getFullYear()} {BRAND}
