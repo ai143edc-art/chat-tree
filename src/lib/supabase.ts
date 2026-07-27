@@ -56,7 +56,13 @@ export function uuidv4(): string {
 
 /* ---------------- Auth ---------------- */
 export function signUp(email: string, password: string, captchaToken?: string) {
-  return sb.auth.signUp({ email, password, options: captchaToken ? { captchaToken } : undefined });
+  // Send the confirmation link back to THIS site (not Supabase's default Site URL,
+  // which starts life as http://localhost:3000). The URL must also be whitelisted
+  // in Supabase → Auth → URL Configuration → Redirect URLs for this to take effect.
+  return sb.auth.signUp({
+    email, password,
+    options: { emailRedirectTo: window.location.origin, ...(captchaToken ? { captchaToken } : {}) },
+  });
 }
 export function signIn(email: string, password: string, captchaToken?: string) {
   return sb.auth.signInWithPassword({ email, password, options: captchaToken ? { captchaToken } : undefined });

@@ -129,7 +129,7 @@ export default function AuthModal({ open, onClose, toast }: Props) {
           <div className="auth-toggle">
             <a role="button" tabIndex={0} onClick={() => go('in')} onKeyDown={keyActivate(() => go('in'))}>{t('backToLogin')}</a>
           </div>
-        ) : (
+        ) : import.meta.env.VITE_GOOGLE_AUTH === '1' ? (
           <>
             <div className="auth-or"><span>{t('orText')}</span></div>
             <button className="auth-google" onClick={google} disabled={busy} type="button">
@@ -142,7 +142,7 @@ export default function AuthModal({ open, onClose, toast }: Props) {
               {t('continueGoogle')}
             </button>
           </>
-        )}
+        ) : null}
 
         <div className={'auth-err' + (ok ? ' ok' : '')}>{err}</div>
 
