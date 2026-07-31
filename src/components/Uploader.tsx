@@ -15,6 +15,7 @@ export interface LoadedChat {
 interface Props {
   onLoaded: (l: LoadedChat) => void;
   onContinue: (l: LoadedChat) => void;
+  onMyRooms: () => void;
   onHistory: () => void;
   onBlank: () => void;
   onHome: () => void;
@@ -23,7 +24,7 @@ interface Props {
   onAccount: () => void;
 }
 
-export default function Uploader({ onLoaded, onContinue, onHistory, onBlank, onHome, userEmail, onLogin, onAccount }: Props) {
+export default function Uploader({ onLoaded, onContinue, onMyRooms, onHistory, onBlank, onHome, userEmail, onLogin, onAccount }: Props) {
   const { t } = useLang();
   const inputRef = useRef<HTMLInputElement>(null);
   // which flow the file picker was opened for: normal view vs "continue chat"
@@ -146,6 +147,7 @@ export default function Uploader({ onLoaded, onContinue, onHistory, onBlank, onH
 
         <div className="up-foot">
           <button className="lp-cta ghost" onClick={onHistory}>{t('upOpenHistory')}</button>
+          {CONTINUE_CHAT && <button className="lp-cta ghost" onClick={onMyRooms}>🔗 My continue-chats</button>}
           <div className="up-note">
             {userEmail
               ? <>{t('upLoggedInAs')} <b>{userEmail}</b> · <a role="button" tabIndex={0} onClick={onAccount} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAccount(); } }}>{t('upAccount')}</a></>

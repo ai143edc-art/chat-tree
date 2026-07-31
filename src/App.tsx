@@ -29,6 +29,7 @@ import { exportChat } from './lib/exporter';
 import { exportBook } from './lib/bookExporter';
 import BookModal from './components/BookModal';
 import ContinueChat from './components/ContinueChat';
+import MyRooms from './components/MyRooms';
 import type { BookConfig } from './lib/bookThemes';
 import type { ChatRow } from './lib/supabase';
 
@@ -41,7 +42,7 @@ const DEFAULT_MODEL = MODELS.find((m) => m.name.startsWith('iPhone 12')) || MODE
 
 export default function App() {
   const { t } = useLang();
-  const [screen, setScreen] = useState<'landing' | 'upload' | 'viewer' | 'shared' | 'privacy' | 'terms' | 'continue'>(
+  const [screen, setScreen] = useState<'landing' | 'upload' | 'viewer' | 'shared' | 'privacy' | 'terms' | 'continue' | 'myrooms'>(
     () => {
       const p = new URLSearchParams(location.search);
       if (p.has('privacy')) return 'privacy';
@@ -50,9 +51,10 @@ export default function App() {
       return 'landing';
     },
   );
-  // "Continue chat" live-room mode: creator (with an imported chat) or a guest via ?room=<id>.
+  // "Continue chat" live-room mode: creator (with an imported chat) or a guest via ?room=<id>
+  // (autoPin = reopen a saved room without the PIN prompt).
   const [continueMode, setContinueMode] = useState<
-    { mode: 'create'; messages: P.Message[]; senders: string[] } | { mode: 'join'; roomId: string } | null
+    { mode: 'create'; messages: P.Message[]; senders: string[] } | { mode: 'join'; roomId: string; autoPin?: string } | null
   >(() => {
     const id = CONTINUE_CHAT ? new URLSearchParams(location.search).get('room') : null;
     return id ? { mode: 'join', roomId: id } : null;
@@ -513,9 +515,25 @@ export default function App() {
           importedMessages={continueMode.mode === 'create' ? continueMode.messages : undefined}
           importedSenders={continueMode.mode === 'create' ? continueMode.senders : undefined}
           roomId={continueMode.mode === 'join' ? continueMode.roomId : undefined}
+          autoPin={continueMode.mode === 'join' ? continueMode.autoPin : undefined}
           userEmail={userEmail}
           onLogin={() => setAuthOpen(true)}
           onHome={() => { setContinueMode(null); setScreen('landing'); }}
+        />
+        <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} toast={toast} />
+        <ResetPasswordModal open={recovery} onDone={() => setRecovery(false)} toast={toast} />
+      </>
+    );
+  }
+
+  if (screen === 'myrooms') {
+    return (
+      <>
+        <MyRooms
+          userEmail={userEmail}
+          onOpen={(roomId, pin) => { setContinueMode({ mode: 'join', roomId, autoPin: pin }); setScreen('continue'); }}
+          onBack={() => setScreen('upload')}
+          onLogin={() => setAuthOpen(true)}
         />
         <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} toast={toast} />
         <ResetPasswordModal open={recovery} onDone={() => setRecovery(false)} toast={toast} />
@@ -568,6 +586,7 @@ export default function App() {
             setContinueMode({ mode: 'create', messages: msgs, senders: [...set] });
             setScreen('continue');
           }}
+          onMyRooms={() => setScreen('myrooms')}
           userEmail={userEmail} onLogin={() => setAuthOpen(true)} onAccount={() => setAccountOpen(true)}
         />
       ) : (
