@@ -30,6 +30,7 @@ import { exportBook } from './lib/bookExporter';
 import BookModal from './components/BookModal';
 import ContinueChat from './components/ContinueChat';
 import MyRooms from './components/MyRooms';
+import { alertDialog, promptDialog } from './lib/dialog';
 import type { BookConfig } from './lib/bookThemes';
 import type { ChatRow } from './lib/supabase';
 
@@ -290,12 +291,12 @@ export default function App() {
   function cycleTick(index: number) {
     setMessages((msgs) => msgs.map((x, i) => (i === index ? { ...x, tick: ((x.tick ?? 3) + 1) % 4 } : x)));
   }
-  function editTime(index: number) {
-    const v = prompt(t('pMsgTime'), messages[index]?.time ?? '');
+  async function editTime(index: number) {
+    const v = await promptDialog({ message: t('pMsgTime'), defaultValue: messages[index]?.time ?? '', confirmLabel: t('dlgSave') });
     if (v != null && v.trim()) setMessages((msgs) => msgs.map((x, i) => (i === index ? { ...x, time: v.trim() } : x)));
   }
-  function editDate(oldDate: string) {
-    const v = prompt(t('pMsgDate'), oldDate);
+  async function editDate(oldDate: string) {
+    const v = await promptDialog({ message: t('pMsgDate'), defaultValue: oldDate, confirmLabel: t('dlgSave') });
     if (v != null && v.trim()) setMessages((msgs) => msgs.map((x) => (x.date === oldDate ? { ...x, date: v.trim() } : x)));
   }
   function addMessage() {
@@ -349,7 +350,7 @@ export default function App() {
   function toggleForward(index: number) {
     setMessages((msgs) => msgs.map((x, i) => (i === index ? { ...x, forwarded: !x.forwarded } : x)));
   }
-  function insertSpecial(type: string) {
+  async function insertSpecial(type: string) {
     const d = new Date();
     const time = `${((d.getHours() % 12) || 12)}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() < 12 ? 'AM' : 'PM'}`;
     const date = messages.length ? messages[messages.length - 1].date : `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
@@ -360,7 +361,7 @@ export default function App() {
     if (type === 'encrypt') {
       add({ system: true, text: '🔒 Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them.' });
     } else if (type === 'system') {
-      const v = prompt(t('pSystemMsg'), '');
+      const v = await promptDialog({ message: t('pSystemMsg'), defaultValue: '' });
       if (v && v.trim()) add({ system: true, text: v.trim() });
     } else if (type === 'deleted') {
       add({ sender: composeSide === 'me' ? meSender : other, text: 'This message was deleted' });
@@ -368,7 +369,7 @@ export default function App() {
       const missed = type === 'call-missed';
       const media: 'voice' | 'video' = type === 'call-video' ? 'video' : 'voice';
       const title = missed ? `Missed ${media} call` : `${media === 'video' ? 'Video' : 'Voice'} call`;
-      const sub = missed ? 'Tap to call back' : (prompt(t('pCallDetails'), 'No answer') || '');
+      const sub = missed ? 'Tap to call back' : ((await promptDialog({ message: t('pCallDetails'), defaultValue: 'No answer' })) || '');
       add({ sender: missed ? other : (composeSide === 'me' ? meSender : other), call: { media, title, sub, missed } });
     }
     if ((type === 'deleted' || type.startsWith('call')) && composeSide === 'me' && !meName) setMeName('You');
@@ -463,7 +464,7 @@ export default function App() {
   }
 
   function onSave() {
-    if (!rawText) { alert(t('tLoadFirst')); return; }
+    if (!rawText) { alertDialog({ message: t('tLoadFirst') }); return; }
     if (!session) { setAuthOpen(true); toast(t('tLoginSaveHist'), 2500); return; }
     setSaveOpen(true);
   }
