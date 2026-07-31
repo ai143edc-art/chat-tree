@@ -2,6 +2,10 @@ import { useRef, useState } from 'react';
 import { useLang } from '../lib/i18n';
 import LangToggle from './LangToggle';
 
+// "Continue chat" is soft-launched behind an env flag: set VITE_CONTINUE_CHAT=1
+// in Vercel to reveal the 3rd card to everyone.
+const CONTINUE_CHAT = import.meta.env.VITE_CONTINUE_CHAT === '1';
+
 export interface LoadedChat {
   rawText: string;
   mediaMap: Record<string, string>;
@@ -10,6 +14,7 @@ export interface LoadedChat {
 
 interface Props {
   onLoaded: (l: LoadedChat) => void;
+  onContinue: (l: LoadedChat) => void;
   onHistory: () => void;
   onBlank: () => void;
   onHome: () => void;
@@ -18,9 +23,11 @@ interface Props {
   onAccount: () => void;
 }
 
-export default function Uploader({ onLoaded, onHistory, onBlank, onHome, userEmail, onLogin, onAccount }: Props) {
+export default function Uploader({ onLoaded, onContinue, onHistory, onBlank, onHome, userEmail, onLogin, onAccount }: Props) {
   const { t } = useLang();
   const inputRef = useRef<HTMLInputElement>(null);
+  // which flow the file picker was opened for: normal view vs "continue chat"
+  const modeRef = useRef<'view' | 'continue'>('view');
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState('');
 
@@ -71,7 +78,9 @@ export default function Uploader({ onLoaded, onHistory, onBlank, onHome, userEma
         return;
       }
       setBusy(t('busyBuilding'));
-      onLoaded({ rawText: chatText, mediaMap, mediaBlobs });
+      const payload = { rawText: chatText, mediaMap, mediaBlobs };
+      if (modeRef.current === 'continue') { modeRef.current = 'view'; onContinue(payload); }
+      else onLoaded(payload);
     } finally {
       setBusy('');
     }
@@ -103,18 +112,19 @@ export default function Uploader({ onLoaded, onHistory, onBlank, onHome, userEma
           <div
             className={'up-card drop' + (drag ? ' drag' : '')}
             style={{ position: 'relative' }}
-            onClick={() => { if (!busy) inputRef.current?.click(); }}
+            onClick={() => { if (!busy) { modeRef.current = 'view'; inputRef.current?.click(); } }}
             onDragEnter={(e) => { e.preventDefault(); if (!busy) setDrag(true); }}
             onDragOver={(e) => { e.preventDefault(); if (!busy) setDrag(true); }}
             onDragLeave={(e) => { e.preventDefault(); setDrag(false); }}
-            onDrop={(e) => { e.preventDefault(); setDrag(false); if (!busy && e.dataTransfer.files?.length) handleFiles([...e.dataTransfer.files]); }}
+            onDrop={(e) => { e.preventDefault(); setDrag(false); modeRef.current = 'view'; if (!busy && e.dataTransfer.files?.length) handleFiles([...e.dataTransfer.files]); }}
           >
             <span className="up-ic">📤</span>
             <span className="up-ct">{t('upUpload')}</span>
             <span className="up-cd">{t('upUploadDesc')} <b>.zip</b> / <b>_chat.txt</b> {t('upWithMedia')}</span>
             <input
               ref={inputRef} type="file" multiple hidden
-              accept=".zip,.txt,image/*,video/*,audio/*,.opus,.vcf,.pdf,.doc,.docx"
+              accept=".zip,.txt,image/*,video/*,audio/*,.opus,.vcf,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+              onClick={(e) => e.stopPropagation()}
               onChange={(e) => handleFiles([...(e.target.files || [])])}
             />
             {busy && (
@@ -124,6 +134,14 @@ export default function Uploader({ onLoaded, onHistory, onBlank, onHome, userEma
               </div>
             )}
           </div>
+
+          {CONTINUE_CHAT && (
+            <button className="up-card blank" onClick={() => { if (!busy) { modeRef.current = 'continue'; inputRef.current?.click(); } }}>
+              <span className="up-ic">🔗</span>
+              <span className="up-ct">Continue chat</span>
+              <span className="up-cd">Import a chat, then keep it going live with the other person</span>
+            </button>
+          )}
         </div>
 
         <div className="up-foot">

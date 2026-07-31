@@ -28,22 +28,35 @@ import { saveChat, onAuthChange, getSharedChat, onPasswordRecovery } from './lib
 import { exportChat } from './lib/exporter';
 import { exportBook } from './lib/bookExporter';
 import BookModal from './components/BookModal';
+import ContinueChat from './components/ContinueChat';
 import type { BookConfig } from './lib/bookThemes';
 import type { ChatRow } from './lib/supabase';
+
+// "Continue chat" live rooms — soft-launched behind an env flag.
+// Set VITE_CONTINUE_CHAT=1 in Vercel to turn it on for everyone.
+const CONTINUE_CHAT = import.meta.env.VITE_CONTINUE_CHAT === '1';
 import { useLang } from './lib/i18n';
 
 const DEFAULT_MODEL = MODELS.find((m) => m.name.startsWith('iPhone 12')) || MODELS[3];
 
 export default function App() {
   const { t } = useLang();
-  const [screen, setScreen] = useState<'landing' | 'upload' | 'viewer' | 'shared' | 'privacy' | 'terms'>(
+  const [screen, setScreen] = useState<'landing' | 'upload' | 'viewer' | 'shared' | 'privacy' | 'terms' | 'continue'>(
     () => {
       const p = new URLSearchParams(location.search);
       if (p.has('privacy')) return 'privacy';
       if (p.has('terms')) return 'terms';
+      if (CONTINUE_CHAT && p.has('room')) return 'continue';
       return 'landing';
     },
   );
+  // "Continue chat" live-room mode: creator (with an imported chat) or a guest via ?room=<id>.
+  const [continueMode, setContinueMode] = useState<
+    { mode: 'create'; messages: P.Message[]; senders: string[] } | { mode: 'join'; roomId: string } | null
+  >(() => {
+    const id = CONTINUE_CHAT ? new URLSearchParams(location.search).get('room') : null;
+    return id ? { mode: 'join', roomId: id } : null;
+  });
   const [recovery, setRecovery] = useState(false);
   const [rawText, setRawText] = useState('');
   const [mediaMap, setMediaMap] = useState<Record<string, string>>({});
@@ -117,7 +130,7 @@ export default function App() {
     window.history.replaceState({ screen: 'landing' }, '');
     const onPop = (e: PopStateEvent) => {
       histSkip.current = true;
-      setScreen((e.state?.screen as 'landing' | 'upload' | 'viewer' | 'shared' | 'privacy' | 'terms') || 'landing');
+      setScreen((e.state?.screen as 'landing' | 'upload' | 'viewer' | 'shared' | 'privacy' | 'terms' | 'continue') || 'landing');
       setHistoryOpen(false); setAuthOpen(false); setAccountOpen(false); setStatsOpen(false); setSettingsOpen(false);
     };
     window.addEventListener('popstate', onPop);
@@ -492,6 +505,24 @@ export default function App() {
     return <><Terms onBack={() => setScreen('landing')} /><ResetPasswordModal open={recovery} onDone={() => setRecovery(false)} toast={toast} /></>;
   }
 
+  if (screen === 'continue' && continueMode) {
+    return (
+      <>
+        <ContinueChat
+          mode={continueMode.mode}
+          importedMessages={continueMode.mode === 'create' ? continueMode.messages : undefined}
+          importedSenders={continueMode.mode === 'create' ? continueMode.senders : undefined}
+          roomId={continueMode.mode === 'join' ? continueMode.roomId : undefined}
+          userEmail={userEmail}
+          onLogin={() => setAuthOpen(true)}
+          onHome={() => { setContinueMode(null); setScreen('landing'); }}
+        />
+        <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} toast={toast} />
+        <ResetPasswordModal open={recovery} onDone={() => setRecovery(false)} toast={toast} />
+      </>
+    );
+  }
+
   if (screen === 'landing') {
     return (
       <>
@@ -531,6 +562,12 @@ export default function App() {
       {screen === 'upload' ? (
         <Uploader
           onLoaded={onLoaded} onHistory={openHistory} onBlank={startBlank} onHome={() => setScreen('landing')}
+          onContinue={(l) => {
+            const msgs = P.parseChat(l.rawText);
+            const set = new Set<string>(); msgs.forEach((m) => { if (m.sender) set.add(m.sender); });
+            setContinueMode({ mode: 'create', messages: msgs, senders: [...set] });
+            setScreen('continue');
+          }}
           userEmail={userEmail} onLogin={() => setAuthOpen(true)} onAccount={() => setAccountOpen(true)}
         />
       ) : (
