@@ -55,7 +55,7 @@ export default function App() {
   // "Continue chat" live-room mode: creator (with an imported chat) or a guest via ?room=<id>
   // (autoPin = reopen a saved room without the PIN prompt).
   const [continueMode, setContinueMode] = useState<
-    { mode: 'create'; messages: P.Message[]; senders: string[] } | { mode: 'join'; roomId: string; autoPin?: string } | null
+    { mode: 'create'; messages: P.Message[]; senders: string[]; media: Record<string, Blob> } | { mode: 'join'; roomId: string; autoPin?: string } | null
   >(() => {
     const id = CONTINUE_CHAT ? new URLSearchParams(location.search).get('room') : null;
     return id ? { mode: 'join', roomId: id } : null;
@@ -515,6 +515,7 @@ export default function App() {
           mode={continueMode.mode}
           importedMessages={continueMode.mode === 'create' ? continueMode.messages : undefined}
           importedSenders={continueMode.mode === 'create' ? continueMode.senders : undefined}
+          importedMedia={continueMode.mode === 'create' ? continueMode.media : undefined}
           roomId={continueMode.mode === 'join' ? continueMode.roomId : undefined}
           autoPin={continueMode.mode === 'join' ? continueMode.autoPin : undefined}
           userEmail={userEmail}
@@ -584,7 +585,7 @@ export default function App() {
           onContinue={(l) => {
             const msgs = P.parseChat(l.rawText);
             const set = new Set<string>(); msgs.forEach((m) => { if (m.sender) set.add(m.sender); });
-            setContinueMode({ mode: 'create', messages: msgs, senders: [...set] });
+            setContinueMode({ mode: 'create', messages: msgs, senders: [...set], media: l.mediaBlobs });
             setScreen('continue');
           }}
           onMyRooms={() => setScreen('myrooms')}
