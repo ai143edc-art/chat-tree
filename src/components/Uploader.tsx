@@ -145,12 +145,19 @@ export default function Uploader({ onLoaded, onContinue, onContinueFresh, onMyRo
               <span className="up-cd">{t('upContinueDesc')}</span>
             </button>
           )}
+
+          {CONTINUE_CHAT && (
+            <button className="up-card blank" onClick={() => { if (!busy) { modeRef.current = 'continue'; inputRef.current?.click(); } }}>
+              <span className="up-ic">📎</span>
+              <span className="up-ct">{t('upContinueImport')}</span>
+              <span className="up-cd">{t('upContinueImportDesc')}</span>
+            </button>
+          )}
         </div>
 
         <div className="up-foot">
           <button className="lp-cta ghost" onClick={onHistory}>{t('upOpenHistory')}</button>
           {CONTINUE_CHAT && <button className="lp-cta ghost" onClick={onMyRooms}>{t('upMyRooms')}</button>}
-          {CONTINUE_CHAT && <button className="lp-cta ghost" onClick={() => { if (!busy) { modeRef.current = 'continue'; inputRef.current?.click(); } }}>{t('upContinueImport')}</button>}
           <div className="up-note">
             {userEmail
               ? <>{t('upLoggedInAs')} <b>{userEmail}</b> · <a role="button" tabIndex={0} onClick={onAccount} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAccount(); } }}>{t('upAccount')}</a></>
