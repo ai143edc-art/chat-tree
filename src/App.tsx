@@ -32,6 +32,8 @@ import ContinueChat from './components/ContinueChat';
 import MyRooms from './components/MyRooms';
 import { recentRooms } from './lib/rooms';
 import { loadScreen, saveScreen, loadDraft, saveDraft } from './lib/session';
+import { captureRef, markActivated } from './lib/referral';
+import RefStats from './components/RefStats';
 import { alertDialog, promptDialog } from './lib/dialog';
 import type { BookConfig } from './lib/bookThemes';
 import type { ChatRow } from './lib/supabase';
@@ -150,6 +152,11 @@ export default function App() {
   useEffect(() => onAuthChange(setSession), []);
   // When the user returns from a password-reset email, prompt for a new password.
   useEffect(() => onPasswordRecovery(() => setRecovery(true)), []);
+
+  // Promoter referral tracking: log a visit if the URL has ?ref=<promoter>, and
+  // mark an "activated" once they actually open a chat / live room.
+  useEffect(() => { captureRef(); }, []);
+  useEffect(() => { if (screen === 'viewer' || screen === 'continue') markActivated(); }, [screen]);
 
   // ---- refresh persistence: reload the same page you were on ----
   // Remember the current page so a refresh reopens it (not the landing screen).
@@ -558,6 +565,17 @@ export default function App() {
         <span className="lf-brand">💬 Chat Tree</span>
         <span className="lf-text">{t('shOpening')}</span>
       </div>
+    );
+  }
+
+  if (new URLSearchParams(location.search).has('refstats')) {
+    return (
+      <>
+        <RefStats userEmail={userEmail} onLogin={() => setAuthOpen(true)}
+          onBack={() => { window.history.replaceState(window.history.state, '', location.origin + '/'); setScreen('landing'); }} />
+        <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} toast={toast} />
+        <ResetPasswordModal open={recovery} onDone={() => setRecovery(false)} toast={toast} />
+      </>
     );
   }
 
