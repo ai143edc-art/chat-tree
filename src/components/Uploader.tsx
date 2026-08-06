@@ -3,9 +3,9 @@ import { useLang } from '../lib/i18n';
 import { alertDialog } from '../lib/dialog';
 import LangToggle from './LangToggle';
 
-// "Continue chat" is soft-launched behind an env flag: set VITE_CONTINUE_CHAT=1
-// in Vercel to reveal the 3rd card to everyone.
-const CONTINUE_CHAT = import.meta.env.VITE_CONTINUE_CHAT === '1';
+// "Continue chat" is ON by default now (the 3rd card shows for everyone).
+// Set VITE_CONTINUE_CHAT=0 in Vercel to hide it again (kill switch).
+const CONTINUE_CHAT = import.meta.env.VITE_CONTINUE_CHAT !== '0';
 
 export interface LoadedChat {
   rawText: string;

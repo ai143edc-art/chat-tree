@@ -4,9 +4,9 @@ import LangToggle from './LangToggle';
 import { themeOf, weaveUrl, vignetteBg } from '../lib/bookThemes';
 
 const BRAND = 'Chat Tree';
-// The "Continue chat" feature is soft-launched behind a flag — only advertise it
-// on the home page when it's actually turned on (VITE_CONTINUE_CHAT=1 in Vercel).
-const CONTINUE_CHAT = import.meta.env.VITE_CONTINUE_CHAT === '1';
+// "Continue chat" is ON by default now, so it's advertised on the home page.
+// Set VITE_CONTINUE_CHAT=0 in Vercel to hide it again (kill switch).
+const CONTINUE_CHAT = import.meta.env.VITE_CONTINUE_CHAT !== '0';
 
 /** The hero book is stamped from the real Forest Cloth theme, not a lookalike. */
 const CLOTH = themeOf('whatsapp');

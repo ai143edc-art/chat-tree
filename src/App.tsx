@@ -36,9 +36,9 @@ import { alertDialog, promptDialog } from './lib/dialog';
 import type { BookConfig } from './lib/bookThemes';
 import type { ChatRow } from './lib/supabase';
 
-// "Continue chat" live rooms — soft-launched behind an env flag.
-// Set VITE_CONTINUE_CHAT=1 in Vercel to turn it on for everyone.
-const CONTINUE_CHAT = import.meta.env.VITE_CONTINUE_CHAT === '1';
+// "Continue chat" live rooms — ON by default now. Set VITE_CONTINUE_CHAT=0 in
+// Vercel to disable it (kill switch) without a code change.
+const CONTINUE_CHAT = import.meta.env.VITE_CONTINUE_CHAT !== '0';
 import { useLang } from './lib/i18n';
 
 const DEFAULT_MODEL = MODELS.find((m) => m.name.startsWith('iPhone 12')) || MODELS[3];
