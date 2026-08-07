@@ -4,17 +4,11 @@ import LangToggle from './LangToggle';
 import { themeOf, weaveUrl, vignetteBg } from '../lib/bookThemes';
 
 const BRAND = 'Chat Tree';
-// "Continue chat" is ON by default now, so it's advertised on the home page.
-// Set VITE_CONTINUE_CHAT=0 in Vercel to hide it again (kill switch).
+
 const CONTINUE_CHAT = import.meta.env.VITE_CONTINUE_CHAT !== '0';
 
-/** The hero book is stamped from the real Forest Cloth theme, not a lookalike. */
 const CLOTH = themeOf('whatsapp');
 
-/**
- * Line icons on a 24px grid. Emoji render differently on every OS and read as
- * clip-art at this size; these inherit currentColor and stay on-brand.
- */
 const PATHS: Record<string, string> = {
   compose: 'M4 20h4l10-10a2.8 2.8 0 1 0-4-4L4 16v4Z M13 7l4 4',
   media: 'M3 5h18v14H3z M3 16l5-5 4 4 3-3 6 6 M8.5 9.5a1.2 1.2 0 1 0 0-.1',
@@ -42,8 +36,6 @@ export default function Landing({ onLaunch, onPrivacy, onTerms }: { onLaunch: ()
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); }
   };
 
-  // The scene leans towards the pointer. Skipped entirely for anyone who has
-  // asked their system for less motion, and on coarse pointers.
   useEffect(() => {
     const el = stage.current;
     if (!el) return;
@@ -62,8 +54,6 @@ export default function Landing({ onLaunch, onPrivacy, onTerms }: { onLaunch: ()
     return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseleave', reset); };
   }, []);
 
-  // Sections fade up as they arrive. The reveal starts them at opacity 0, so if
-  // there is no observer to turn them on, show everything rather than nothing.
   useEffect(() => {
     const items = Array.from(document.querySelectorAll<HTMLElement>('.lp-reveal'));
     if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -73,9 +63,7 @@ export default function Landing({ onLaunch, onPrivacy, onTerms }: { onLaunch: ()
     const io = new IntersectionObserver((entries) => {
       for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
     }, { rootMargin: '0px 0px -12% 0px' });
-    // Anything already at or above the fold is shown outright. The observer only
-    // fires on a crossing, so a restored scroll position or a deep link would
-    // otherwise leave every section above it invisible for good.
+
     items.forEach((n) => {
       if (n.getBoundingClientRect().top < window.innerHeight) n.classList.add('in');
       else io.observe(n);
@@ -126,7 +114,7 @@ export default function Landing({ onLaunch, onPrivacy, onTerms }: { onLaunch: ()
           </div>
           <div className="lp-trust">{t('trust')}</div>
         </div>
-        {/* The chat on the left, the book it becomes on the right — the whole pitch. */}
+
         <div className="lp-hero-art" aria-hidden="true">
           <div className="lp-scene">
             <div className="lp-stage" ref={stage}>
@@ -207,8 +195,6 @@ export default function Landing({ onLaunch, onPrivacy, onTerms }: { onLaunch: ()
         </div>
       </section>
 
-      {/* The photograph is cropped to the printed page: the facing collage page in
-          the original render is not something the exporter actually produces. */}
       <section className="lp-sec lp-keep">
         <div className="lp-keep-art lp-reveal">
           <img src="/keepsake-book.webp" width={700} height={676}
@@ -253,9 +239,7 @@ export default function Landing({ onLaunch, onPrivacy, onTerms }: { onLaunch: ()
       <footer className="lp-foot">
         <div>💬 {BRAND}</div>
         <p className="lp-disc">{t('footerDisc')}</p>
-        {/* Real crawlable link to the static guides hub — internal linking + SEO.
-            Points to the Hindi hub when the app is in Hindi, English otherwise;
-            each hub then cross-links to the other via its EN/हिं toggle. */}
+
         <div className="lp-copy">
           <a className="lp-link" href={lang === 'hi' ? '/guides/hi/' : '/guides/'}>{t('guideLink')}</a>
         </div>
