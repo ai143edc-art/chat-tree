@@ -26,6 +26,7 @@ import Terms from './components/Terms';
 import ResetPasswordModal from './components/ResetPasswordModal';
 import { saveChat, onAuthChange, getSharedChat, onPasswordRecovery } from './lib/supabase';
 import { exportChat } from './lib/exporter';
+import { exportVideo } from './lib/videoExporter';
 import { exportBook } from './lib/bookExporter';
 import BookModal from './components/BookModal';
 import ContinueChat from './components/ContinueChat';
@@ -446,6 +447,13 @@ export default function App() {
     catch (e) { toast('❌ ' + ((e as Error).message || e), 4000); }
   }
 
+  async function onExportVideo() {
+    if (!messages.length) { toast(t('tLoadFirst'), 3000); return; }
+    toast(t('tVideo'), 0);
+    try { await exportVideo(contactTitle); toast(t('tVideoDone'), 2500); }
+    catch (e) { toast('❌ ' + ((e as Error).message || e), 4000); }
+  }
+
   async function doExportBook(config: BookConfig) {
     setBookExporting(true);
     setBookProgress({ done: 0, total: 0 });
@@ -678,6 +686,7 @@ export default function App() {
               onTranslate: () => setTranslateOpen(true),
               onExportImg: () => onExport('png'),
               onExportPdf: () => onExport('pdf'),
+              onExportVideo,
               onExportBook: () => setBookOpen(true),
               onSave, saving,
               onTheme: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')),
